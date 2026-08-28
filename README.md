@@ -1,2 +1,2 @@
 # DLTCore
-A compilation of tweaks for DeltaQuest RPG
+A compilation of tweaks for DeltaQuest RPG Modpack
