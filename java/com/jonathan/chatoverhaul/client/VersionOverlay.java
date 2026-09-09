@@ -37,6 +37,9 @@ public final class VersionOverlay {
     private static final String DREAMWORLD_TEXT = "???";
     private static final String VOIDEXP_TEXT = "Minecraft VoidExp v0.0.1";
     private static final String HUB_TEXT = "Minecraft Alpha v1.0.16.05_11";
+    // Morse for "SINGULARITY IS NEAR." - dlrowmaerd's own carved-out text,
+    // same pattern as dreamworld/hub/voidexp below.
+    private static final String DLROWMAERD_TEXT = "... .. -. --. ..- .-.. .- .-. .. - -.-- / .. ... / -. . .- .-.";
 
     /** Documents which dimensions get the configurable text; the final fallback in textFor() covers them (and anything unrecognized) either way. */
     private static final Set<String> VANILLA_DIMENSIONS = Set.of(
@@ -45,9 +48,14 @@ public final class VersionOverlay {
             "minecraft:the_end"
     );
 
-    /** Rendered as "???" - the one dimension carved out of the Wonderland warning set. */
+    /** Rendered as "???" - carved out of the Wonderland warning set. */
     private static final Set<String> DREAMWORLD_DIMENSIONS = Set.of(
             "the_wonderland:dreamworld"
+    );
+
+    /** Rendered as the morse-code line above - also carved out of the Wonderland warning set. */
+    private static final Set<String> DLROWMAERD_DIMENSIONS = Set.of(
+            "the_wonderland:dlrowmaerd"
     );
 
     private static final Set<String> VOIDEXP_DIMENSIONS = Set.of(
@@ -83,7 +91,6 @@ public final class VersionOverlay {
             "the_wonderland:compliance",
             "the_wonderland:corners",
             "the_wonderland:depths",
-            "the_wonderland:dlrowmaerd",
             "the_wonderland:dream_6",
             "the_wonderland:endless_field",
             "the_wonderland:endless_forest",
@@ -155,6 +162,9 @@ public final class VersionOverlay {
         }
         if (DREAMWORLD_DIMENSIONS.contains(dimensionId)) {
             return DREAMWORLD_TEXT;
+        }
+        if (DLROWMAERD_DIMENSIONS.contains(dimensionId)) {
+            return DLROWMAERD_TEXT;
         }
         if (VOIDEXP_DIMENSIONS.contains(dimensionId)) {
             return VOIDEXP_TEXT;

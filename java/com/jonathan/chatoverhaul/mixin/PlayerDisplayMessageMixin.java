@@ -13,11 +13,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * bypassing the command system entirely - so there's no vanilla/Forge event
  * to hook. We intercept the call itself and rewrite the text in place.
  *
- * IMPORTANT: mixed into ServerPlayer, not Player. Player#displayClientMessage
- * is a near-empty stub - ServerPlayer overrides it with the real
- * implementation that actually sends the packet, and virtual dispatch always
- * calls the override. A mixin on Player's copy would compile and package
- * fine but never actually run.
+ * ALSO handles rus-patch's "null joined the game": that one is dispatched
+ * via an actual `/tellraw @a {...}` command, and vanilla's TellRawCommand
+ * is believed to resolve `@a` into individual targets and call
+ * ServerPlayer#sendSystemMessage(Component) on each one directly - a
+ * different method than displayClientMessage, so it gets its own
+ * injection point below. The same check is ALSO duplicated into the
+ * displayClientMessage injection as a safety net, in case that belief
+ * about which exact method vanilla routes through turns out to be wrong -
+ * one of the two is guaranteed to be right, and having both costs nothing
+ * since only one will ever actually match a given message.
+ *
+ * IMPORTANT: mixed into ServerPlayer, not Player. Both displayClientMessage
+ * and sendSystemMessage are near-empty stubs on the base Player class -
+ * ServerPlayer overrides both with the real implementation that actually
+ * sends the packet, and virtual dispatch always calls the override. A
+ * mixin on Player's copy would compile and package fine but never
+ * actually run - this is the same lesson learned the hard way with
+ * displayClientMessage originally.
  */
 @Mixin(ServerPlayer.class)
 public abstract class PlayerDisplayMessageMixin {
@@ -31,6 +44,26 @@ public abstract class PlayerDisplayMessageMixin {
             ServerPlayer self = (ServerPlayer) (Object) this;
             ci.cancel();
             self.displayClientMessage(Component.literal(replaced).withStyle(message.getStyle()), actionBar);
+            return;
+        }
+
+        // Safety net: if TellRawCommand ever routes through displayClientMessage
+        // instead of sendSystemMessage, this catches "null joined the game" here too.
+        if (text.equals("null joined the game")) {
+            ServerPlayer self = (ServerPlayer) (Object) this;
+            ci.cancel();
+            self.displayClientMessage(Component.literal("\u273A joined the game").withStyle(message.getStyle()), actionBar);
+        }
+    }
+
+    @Inject(method = "sendSystemMessage(Lnet/minecraft/network/chat/Component;)V", at = @At("HEAD"), cancellable = true)
+    private void chatoverhaul$renameNullJoin(Component message, CallbackInfo ci) {
+        String text = message.getString();
+
+        if (text.equals("null joined the game")) {
+            ServerPlayer self = (ServerPlayer) (Object) this;
+            ci.cancel();
+            self.sendSystemMessage(Component.literal("\u273A joined the game").withStyle(message.getStyle()));
         }
     }
 }

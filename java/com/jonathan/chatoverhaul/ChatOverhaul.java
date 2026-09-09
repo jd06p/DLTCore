@@ -21,6 +21,15 @@ import net.minecraftforge.fml.config.ModConfig;
  *    entering Broken Script/Arg Container dimensions.
  *  - mixin/cpapi/PortalPlacerMixin: blocks Custom Portal API portal
  *    ignition inside Wonderland/Broken Script/Arg Container dimensions.
+ *  - mixin/rus/CodesProcedureMixin: disables The Broken Script's Null
+ *    chat-response system.
+ *  - event/WonderlandAdventureModeHandler: forces Adventure Mode inside
+ *    four specific Wonderland dimensions, restores Survival on exit.
+ *  - event/WonderlandDeathRespawnHandler: keeps a player in the same
+ *    Wonderland dimension they died in, across respawn.
+ *  - event/NotRealEventHandler: the "im not real" chat-triggered sequence.
+ *  - event/NullJoinCommandInterceptor: definitive fix for "null joined the
+ *    game" via CommandEvent, independent of the two mixin-based guesses.
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra
