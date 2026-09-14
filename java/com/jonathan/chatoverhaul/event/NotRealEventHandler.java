@@ -85,7 +85,7 @@ public final class NotRealEventHandler {
 
         // "Distorted" via minimum pitch - matches the convention used
         // throughout this pack's own ambient.cave usage elsewhere.
-        player.playNotifySound(SoundEvents.AMBIENT_CAVE.get(), SoundSource.AMBIENT, 2.0f, 0.0f);
+        player.playNotifySound(SoundEvents.AMBIENT_CAVE.value(), SoundSource.AMBIENT, 2.0f, 0.0f);
 
         player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, DARKNESS_DURATION_TICKS, 0, false, false));
 

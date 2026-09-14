@@ -30,6 +30,21 @@ import net.minecraftforge.fml.config.ModConfig;
  *  - event/NotRealEventHandler: the "im not real" chat-triggered sequence.
  *  - event/NullJoinCommandInterceptor: definitive fix for "null joined the
  *    game" via CommandEvent, independent of the two mixin-based guesses.
+ *  - mixin/arg/JukeboxRitualGateMixin, event/Entity303RitualManager,
+ *    event/RitualState, event/RitualInstance: the Entity303 (evil_user_0)
+ *    ritual/bossfight system, triggered by playing the user_0 music disc
+ *    on a jukebox in the_arg_container:moonfalldimension. The "encounter"
+ *    spans the whole thing (clone phase through the boss's actual
+ *    lifetime) - see Entity303RitualManager's class doc for how that
+ *    lifecycle works, including the Moonfall escape-prevention and
+ *    block-placement restrictions that apply for its duration.
+ *  - PlayerListBroadcastMixin also rewrites evil_user_0's "user0" chat
+ *    speaker name to "Entity303" and Steven's "<Steven>" to "<BLANK>".
+ *    evil_user_0's floating nametag rename to "Entity303" is handled via
+ *    KubeJS (kubejs_reference/server_scripts/rename_evil_user_0.js),
+ *    matching the established pattern already used for other entities.
+ *  - event/IntegrityBossBarHandler: red vanilla-style boss bar tracking
+ *    health for thebrokenscript:integrity_bossfight.
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra
