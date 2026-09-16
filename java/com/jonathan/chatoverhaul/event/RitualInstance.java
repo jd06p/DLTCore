@@ -50,6 +50,8 @@ final class RitualInstance {
 
     /** Set once Entity303 actually spawns; null before that and after it's resolved (killed or discarded). */
     volatile UUID bossUuid = null;
+    /** Ensures the 50% health second-phase sequence can only ever fire once per boss instance. */
+    volatile boolean secondPhaseTriggered = false;
 
     RitualInstance(MinecraftServer server, UUID playerUuid, ResourceKey<Level> dimension, BlockPos jukeboxPos) {
         this.server = server;

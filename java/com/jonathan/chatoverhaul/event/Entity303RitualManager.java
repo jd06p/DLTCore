@@ -1,8 +1,12 @@
 package com.jonathan.chatoverhaul.event;
 
 import com.jonathan.chatoverhaul.ChatOverhaul;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
@@ -18,10 +22,15 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -73,6 +82,9 @@ public final class Entity303RitualManager {
     private static final ResourceLocation BOSS_ID = new ResourceLocation("the_arg_container", "evil_user_0");
     private static final ResourceLocation CURSE_EFFECT_ID = new ResourceLocation("the_arg_container", "curseof_user_0");
     private static final ResourceLocation SIREN_SOUND_ID = new ResourceLocation("the_wonderland", "siren_scream_remake");
+    private static final ResourceLocation NULL_KILLS_PLAYER_SOUND_ID = new ResourceLocation("thebrokenscript", "nullkillsplayer");
+    private static final ResourceLocation SPAWN_SCREAM_SOUND_ID = new ResourceLocation("the_wonderland", "the_spawn_scream_new");
+    private static final ResourceLocation FOLLOW_CHASE_LOOP_SOUND_ID = new ResourceLocation("thebrokenscript", "followchaseloop");
     private static final String MOONFALL_DIMENSION = "the_arg_container:moonfalldimension";
 
     private static final int TOTAL_CLONES = 50;
@@ -84,6 +96,32 @@ public final class Entity303RitualManager {
     private static final String REJECT_WRONG_DIMENSION = "Looks like It rejects this place.";
     private static final String REJECT_ALREADY_RUNNING = "err.youcant";
     private static final String ESCAPE_BLOCKED_MESSAGE = "You can't escape";
+
+    // --- Failsafe / targeting ---
+    private static final int BOSS_TICK_SCAN_INTERVAL = 20; // position/target checks, once a second - health check itself runs every tick, see onBossTick
+    private static final double FAILSAFE_DISTANCE = 150.0; // deliberately much larger than the boosted follow range below, so it never fights normal long-range chasing
+    private static final double BOOSTED_FOLLOW_RANGE = 128.0; // vanilla default on this entity is 16
+
+    // --- Second phase (50% HP) ---
+    private static final float SECOND_PHASE_HEALTH_FRACTION = 0.5f;
+    private static final int TITLE_INTERVAL_TICKS = 5; // ~0.25s between titles - fast/glitchy but still readable
+    private static final int TITLE_CYCLES = 10;
+    private static final String[] TITLE_SEQUENCE = {
+            "NONONONONONONONONONONONONONONONO",
+            "30303030303030303030303030303",
+            "Help us",
+            "THE END IS NIGH",
+            "WHY DO YOU KEEP TRYING?",
+            "YOU CAN'T WIN",
+            "YOU ARE NOT REAL",
+            "WAKEUPWAKEUPWAKEUPWAKEUPWAKEUPWAKEUPWAKEUP"
+    };
+    private static final String[] SECOND_PHASE_DIALOGUE = {
+            "WHY DO YOU KEEP TRYING?",
+            "YOU REALLY THINK YOU WILL CHANGE SOMETHING?",
+            "IT'S ALREADY TOO LATE FOR THEM",
+            "JUST GIVE UP AND LET US FREE"
+    };
 
     private static volatile RitualInstance ACTIVE = null;
 
@@ -206,6 +244,190 @@ public final class Entity303RitualManager {
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
         return String.format("%d:%02d", minutes, seconds);
+    }
+
+    // =========================================================================
+    // Boss tick: position/dimension failsafe, target reaffirmation, 50% HP phase
+    // =========================================================================
+
+    @SubscribeEvent
+    public static void onBossTick(LivingEvent.LivingTickEvent event) {
+        RitualInstance instance = ACTIVE;
+        if (instance == null || instance.bossUuid == null) {
+            return;
+        }
+
+        LivingEntity boss = event.getEntity();
+        if (!boss.getUUID().equals(instance.bossUuid) || boss.level().isClientSide()) {
+            return;
+        }
+
+        // Health check runs every tick (cheap, and we want to catch the
+        // 50% threshold promptly) - everything else below is throttled.
+        if (!instance.secondPhaseTriggered) {
+            float maxHealth = boss.getMaxHealth();
+            if (maxHealth > 0.0f && boss.getHealth() / maxHealth <= SECOND_PHASE_HEALTH_FRACTION) {
+                instance.secondPhaseTriggered = true;
+                triggerSecondPhase(instance, boss);
+            }
+        }
+
+        if (boss.tickCount % BOSS_TICK_SCAN_INTERVAL != 0) {
+            return;
+        }
+
+        ServerPlayer player = instance.server.getPlayerList().getPlayer(instance.playerUuid);
+        if (player == null) {
+            return;
+        }
+
+        // --- Failsafe: boss wandered into another dimension entirely ---
+        if (!boss.level().dimension().equals(instance.dimension)) {
+            relocateBossAcrossDimension(instance, boss, player);
+            return;
+        }
+
+        // --- Failsafe: boss is in Moonfall but has drifted too far away ---
+        if (boss.distanceToSqr(player) > FAILSAFE_DISTANCE * FAILSAFE_DISTANCE) {
+            boss.teleportTo(player.getX(), player.getY(), player.getZ());
+        }
+
+        // --- Keep the boss locked onto the ritual's player specifically ---
+        if (boss instanceof Mob mob && mob.getTarget() != player) {
+            mob.setTarget(player);
+        }
+    }
+
+    /**
+     * Moves the boss back into Moonfall when it ends up in the wrong
+     * dimension entirely (e.g. wandered through a portal). Entity#
+     * canChangeDimensions() returns false on EvilUser0Entity - vanilla
+     * portals shouldn't move it at all - but Custom Portal API implements
+     * its own teleport logic independently of that vanilla guard (confirmed
+     * separately when this mod's own portal-restriction mixin was built),
+     * so this remains a real possibility worth guarding against.
+     *
+     * There's no simple, version-safe cross-dimension move for a generic
+     * (non-player) Entity, so this discards the stray entity and spawns a
+     * fresh one in Moonfall instead - health is explicitly copied over
+     * first so this doesn't undo the player's progress in the fight, even
+     * though other transient state (potion effects on the boss, if any) is
+     * not preserved. This is intended purely as a rare failsafe, not a
+     * normal occurrence.
+     */
+    private static void relocateBossAcrossDimension(RitualInstance instance, LivingEntity strayBoss, ServerPlayer player) {
+        ServerLevel moonfall = instance.server.getLevel(instance.dimension);
+        if (moonfall == null) {
+            return;
+        }
+
+        float health = strayBoss.getHealth();
+        strayBoss.discard();
+
+        EntityType<?> bossType = ForgeRegistries.ENTITY_TYPES.getValue(BOSS_ID);
+        if (bossType == null) {
+            return;
+        }
+        Entity fresh = bossType.create(moonfall);
+        if (fresh == null) {
+            return;
+        }
+        fresh.moveTo(player.getX(), player.getY(), player.getZ(), 0.0f, 0.0f);
+        moonfall.addFreshEntity(fresh);
+
+        if (fresh instanceof LivingEntity freshLiving) {
+            freshLiving.setHealth(health);
+            applyFollowRangeBoost(freshLiving);
+        }
+        instance.bossUuid = fresh.getUUID();
+    }
+
+    // =========================================================================
+    // Second phase (50% HP): lightning, Darkness, sounds, glitch titles, dialogue
+    // =========================================================================
+
+    private static void triggerSecondPhase(RitualInstance instance, LivingEntity boss) {
+        MinecraftServer server = instance.server;
+        ServerPlayer player = server.getPlayerList().getPlayer(instance.playerUuid);
+
+        long titleSpanTicks = (long) TITLE_SEQUENCE.length * TITLE_CYCLES * TITLE_INTERVAL_TICKS;
+        long darknessDuration = titleSpanTicks + seconds(1); // small buffer so it can't expire even a tick early
+
+        // --- Synchronized at the start of the phase: lightning, Darkness, and all three sounds ---
+        if (player != null) {
+            ServerLevel level = server.getLevel(instance.dimension);
+            if (level != null) {
+                spawnVisualLightning(level, player.getX(), player.getY(), player.getZ());
+            }
+            player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, (int) darknessDuration, 0, false, false));
+
+            playIfPresent(player, NULL_KILLS_PLAYER_SOUND_ID, 2.0f, 1.0f);
+            playIfPresent(player, SPAWN_SCREAM_SOUND_ID, 2.0f, 1.0f);
+            playIfPresent(player, FOLLOW_CHASE_LOOP_SOUND_ID, 2.0f, 1.0f);
+        }
+
+        // --- Rapid glitch title sequence, 8 titles x 10 cycles ---
+        sendTitleTimesToAll(server, 0, TITLE_INTERVAL_TICKS, 0);
+        long t = 0;
+        for (int cycle = 0; cycle < TITLE_CYCLES; cycle++) {
+            for (String title : TITLE_SEQUENCE) {
+                long delay = t;
+                TickScheduler.scheduleInTicks(delay, () -> {
+                    if (ACTIVE == instance) {
+                        sendTitleToAll(server, titleComponent(title));
+                    }
+                });
+                t += TITLE_INTERVAL_TICKS;
+            }
+        }
+
+        // --- Dialogue, starting once the titles have settled ---
+        long dialogueStart = titleSpanTicks + seconds(1);
+        long dt = dialogueStart;
+        for (String line : SECOND_PHASE_DIALOGUE) {
+            long delay = dt;
+            TickScheduler.scheduleInTicks(delay, () -> {
+                if (ACTIVE == instance) {
+                    broadcastEntity303Red(server, line);
+                }
+            });
+            dt += seconds(3);
+        }
+    }
+
+    private static void playIfPresent(ServerPlayer player, ResourceLocation soundId, float volume, float pitch) {
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(soundId);
+        if (sound != null) {
+            player.playNotifySound(sound, SoundSource.HOSTILE, volume, pitch);
+        }
+    }
+
+    /** The dark-red/bold titles from the request; "Help us" is bold only, no color, matching the given style exactly. */
+    private static Component titleComponent(String text) {
+        Style style = Style.EMPTY.withBold(true);
+        if (!text.equals("Help us")) {
+            style = style.withColor(ChatFormatting.DARK_RED);
+        }
+        return Component.literal(text).withStyle(style);
+    }
+
+    private static void sendTitleTimesToAll(MinecraftServer server, int fadeIn, int stay, int fadeOut) {
+        ClientboundSetTitlesAnimationPacket packet = new ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            p.connection.send(packet);
+        }
+    }
+
+    private static void sendTitleToAll(MinecraftServer server, Component title) {
+        ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(title);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            p.connection.send(packet);
+        }
+    }
+
+    private static void broadcastEntity303Red(MinecraftServer server, String line) {
+        server.getPlayerList().broadcastSystemMessage(
+                Component.literal("<Entity303> " + line).withStyle(ChatFormatting.RED), false);
     }
 
     // =========================================================================
@@ -497,6 +719,34 @@ public final class Entity303RitualManager {
         level.addFreshEntity(boss);
 
         instance.bossUuid = boss.getUUID();
+        applyFollowRangeBoost(boss);
+
+        // --- Spawn event: nullkillsplayer sound + lightning at the ritual's player ---
+        if (player != null) {
+            SoundEvent spawnSound = ForgeRegistries.SOUND_EVENTS.getValue(NULL_KILLS_PLAYER_SOUND_ID);
+            if (spawnSound != null) {
+                player.playNotifySound(spawnSound, SoundSource.HOSTILE, 2.0f, 1.0f);
+            }
+            spawnVisualLightning(level, player.getX(), player.getY(), player.getZ());
+        }
+    }
+
+    /** FOLLOW_RANGE defaults to just 16 on this entity - far too short to chase across any real distance. Boosted here rather than via a mixin/AI-goal change, per the request. */
+    private static void applyFollowRangeBoost(Entity boss) {
+        if (boss instanceof LivingEntity living && living.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+            living.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(BOOSTED_FOLLOW_RANGE);
+        }
+    }
+
+    /** Visual-only lightning (no damage) - used for dramatic beats (spawn event, 50% phase) where an unintended kill would undercut the moment rather than sell it. */
+    private static void spawnVisualLightning(ServerLevel level, double x, double y, double z) {
+        LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level);
+        if (bolt == null) {
+            return;
+        }
+        bolt.moveTo(x, y, z);
+        bolt.setVisualOnly(true);
+        level.addFreshEntity(bolt);
     }
 
     private static void triggerFailure(RitualInstance instance) {

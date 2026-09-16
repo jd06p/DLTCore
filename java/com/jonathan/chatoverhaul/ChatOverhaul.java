@@ -37,7 +37,12 @@ import net.minecraftforge.fml.config.ModConfig;
  *    spans the whole thing (clone phase through the boss's actual
  *    lifetime) - see Entity303RitualManager's class doc for how that
  *    lifecycle works, including the Moonfall escape-prevention and
- *    block-placement restrictions that apply for its duration.
+ *    block-placement restrictions that apply for its duration. Also
+ *    includes a position/dimension failsafe against the boss getting
+ *    stranded, a boosted FOLLOW_RANGE attribute for long-range chasing,
+ *    a spawn-event (sound + lightning), and a one-time 50%-health second
+ *    phase (lightning, Darkness, sounds, a rapid glitch title sequence,
+ *    and red dialogue).
  *  - PlayerListBroadcastMixin also rewrites evil_user_0's "user0" chat
  *    speaker name to "Entity303" and Steven's "<Steven>" to "<BLANK>".
  *    evil_user_0's floating nametag rename to "Entity303" is handled via
