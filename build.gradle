@@ -1,0 +1,106 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+}
+
+version = '1.0.0'
+group = 'com.jonathan.chatoverhaul'
+// Controls only the output jar filename (DLTCore-1.0.0.jar). Deliberately
+// NOT the same as modId ("chatoverhaul", set in mods.toml/ChatOverhaul.java)
+// or the Java package (com.jonathan.chatoverhaul) - neither of those needed
+// to change for this, and leaving them alone avoids touching the mixin
+// refmap path, persistent-data keys, and everything else that references
+// "chatoverhaul" internally.
+archivesBaseName = 'DLTCore'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// Without this, javac reads .java files using the HOST MACHINE's default
+// platform charset, not necessarily UTF-8 - on Windows in particular, that
+// default is very often a legacy single-byte codepage. Any non-ASCII
+// character embedded directly in a source file (e.g. the raw "✺" literal
+// that used to be in PlayerListBroadcastMixin) would then get silently
+// misread as the wrong sequence of characters at compile time, baking a
+// corrupted string into the compiled class - with no build error, since
+// the misread bytes are still "valid" characters, just the wrong ones.
+// This forces UTF-8 regardless of the host machine's own default.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods { chatoverhaul { source sourceSets.main } }
+        }
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods { chatoverhaul { source sourceSets.main } }
+        }
+    }
+}
+
+// Points the mixin gradle plugin at our refmap + config, matching the
+// same setup already used in bossmod.
+mixin {
+    add sourceSets.main, 'chatoverhaul.refmap.json'
+    config 'mixins.chatoverhaul.json'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.minecraftforge.net/' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.20.1-47.2.0'
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    // Needed only to compile PortalPlacerMixin, which mixes into Custom
+    // Portal API's own PortalPlacer class. Not bundled or required at
+    // runtime - mixins.chatoverhaul.cpapi.json is "required": false, so
+    // chatoverhaul still loads fine if Custom Portal API isn't present.
+    compileOnly files('libs/cpapireforged-1.0.4.jar')
+
+    // Needed only so the mixin annotation processor can resolve the
+    // @Mixin(targets=...) class names in CodesProcedureMixin and
+    // JukeboxRitualGateMixin (the processor errors out if it cannot find
+    // the target class on the classpath - the same reason the cpapi jar
+    // above exists). The mixin method signatures themselves only use
+    // vanilla/Forge types. Not bundled or required at runtime -
+    // mixins.chatoverhaul.rus.json and mixins.chatoverhaul.arg.json are
+    // both "required": false, so chatoverhaul still loads fine without
+    // rus-patch or The Arg Container installed.
+    compileOnly files('libs/rus-patch-1.3_6-1.9.3.jar')
+    compileOnly files('libs/the_arg_container-0.4.3-forge-1.20.1.jar')
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title'     : 'chatoverhaul',
+            'Specification-Vendor'    : 'jonathan',
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : project.name,
+            'Implementation-Version'  : project.jar.archiveVersion,
+            'Implementation-Vendor'   : 'jonathan',
+            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json'
+        ])
+    }
+}

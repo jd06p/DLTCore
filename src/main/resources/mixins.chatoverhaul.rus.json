@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.jonathan.chatoverhaul.mixin.rus",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "CodesProcedureMixin"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
