@@ -89,6 +89,25 @@ dependencies {
     // rus-patch or The Arg Container installed.
     compileOnly files('libs/rus-patch-1.3_6-1.9.3.jar')
     compileOnly files('libs/the_arg_container-0.4.3-forge-1.20.1.jar')
+    // Needed only so the mixin annotation processor can resolve the
+    // @Mixin(targets=...) class name in DismantlerSilverBlockCompat (the
+    // processor errors out if it cannot find the target class on the
+    // classpath). Not bundled or required at runtime - the arg mixin config
+    // is "required": false, so chatoverhaul still loads fine without
+    // The Wonderland installed.
+    compileOnly files('libs/the_wonderland-3.0.3-1.20.1-forge.jar')
+
+    // JNA (Java Native Access) provides the native Windows MessageBox used for
+    // the fake "LWJGL Alert" on Entity303 death (client/FakeLwjglAlert).
+    // Deliberately NOT bundled into the mod jar: the launcher already ships a
+    // com.sun.jna module (net.java.dev.jna:jna in the Install/library folder)
+    // on the runtime classpath. Bundling JNA would make the mod a second
+    // module exporting "com.sun.jna", producing a split-package
+    // java.lang.module.ResolutionException at game launch. It is only used by
+    // the Strictly client-side alert class, which is reached through the
+    // DistExecutor-guarded ClientAlertPacket handler - a dedicated server
+    // never loads or executes any of it.
+    implementation 'net.java.dev.jna:jna:5.14.0'
 }
 
 jar {

@@ -1,6 +1,8 @@
 package com.jonathan.chatoverhaul.event;
 
 import com.jonathan.chatoverhaul.ChatOverhaul;
+import com.jonathan.chatoverhaul.network.ChatOverhaulNetwork;
+import com.jonathan.chatoverhaul.network.ClientAlertPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -35,6 +37,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.UUID;
@@ -365,7 +368,7 @@ public final class Entity303RitualManager {
             ServerLevel level = server.getLevel(instance.dimension);
             if (level != null) {
                 spawnVisualLightning(level, player.getX(), player.getY(), player.getZ());
-                spawnJumposcorroosAround(level, player);
+                spawnJumposcorroosAround(instance, level, player);
             }
             player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, (int) darknessDuration, 0, false, false));
 
@@ -499,7 +502,24 @@ public final class Entity303RitualManager {
 
         // --- Case 2: the boss itself was killed by the player - the true final victory ---
         if (instance.bossUuid != null && entity.getUUID().equals(instance.bossUuid)) {
+            // Claim the kill synchronously (plus endEncounter below) so no
+            // number of re-fired death events can ever run this twice for the
+            // same encounter. Only an ACTUAL LivingDeathEvent reaches here -
+            // unloading, despawning, removal or a dimension migration never
+            // do, so the alert can't fire for those.
             instance.bossUuid = null;
+
+            // Ask every client currently in the boss's dimension to show the
+            // fake "LWJGL Alert" ("I WILL BE BACK"). The packet is client-bound
+            // and handled through DistExecutor, so the server never runs any
+            // window code itself.
+            if (entity.level() instanceof ServerLevel deathLevel) {
+                for (ServerPlayer player : deathLevel.players()) {
+                    ChatOverhaulNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                            new ClientAlertPacket(ClientAlertPacket.KIND_ENTITY303_DEATH));
+                }
+            }
+
             endEncounter(instance);
             return;
         }
@@ -778,8 +798,8 @@ public final class Entity303RitualManager {
         level.addFreshEntity(bolt);
     }
 
-    /** Spawns JUMPOSCORROO_COUNT entities near (not on top of) the player, each at a small random offset so they don't stack at one point. */
-    private static void spawnJumposcorroosAround(ServerLevel level, ServerPlayer player) {
+    /** Spawns JUMPOSCORROO_COUNT entities near (not on top of) the player and records their UUIDs so only this ritual's own jumposcorroos are cleaned up on encounter end. */
+    private static void spawnJumposcorroosAround(RitualInstance instance, ServerLevel level, ServerPlayer player) {
         EntityType<?> jumposcorrooType = ForgeRegistries.ENTITY_TYPES.getValue(JUMPOSCORROO_ID);
         if (jumposcorrooType == null) {
             return;
@@ -797,7 +817,22 @@ public final class Entity303RitualManager {
             }
             entity.moveTo(x, player.getY(), z, player.getRandom().nextFloat() * 360.0f, 0.0f);
             level.addFreshEntity(entity);
+            instance.ownedJumposcorroos.add(entity.getUUID());
         }
+    }
+
+    /** Removes every jumposcorroo this ritual spawned during its 50%-health phase. Only UUIDs THIS ritual recorded get discarded, so jumposcorroos spawned by anything else are untouched. */
+    private static void despawnOwnedJumposcorroos(RitualInstance instance) {
+        ServerLevel level = instance.server.getLevel(instance.dimension);
+        if (level != null) {
+            for (UUID uuid : instance.ownedJumposcorroos) {
+                Entity jumposcorroo = level.getEntity(uuid);
+                if (jumposcorroo != null) {
+                    jumposcorroo.discard();
+                }
+            }
+        }
+        instance.ownedJumposcorroos.clear();
     }
 
     private static void triggerFailure(RitualInstance instance) {
@@ -877,8 +912,9 @@ public final class Entity303RitualManager {
         }
     }
 
-    /** Marks the WHOLE encounter over - only after this does tryStartRitual() allow a new one, escape prevention stop, and block placement resume. */
+    /** Marks the WHOLE encounter over - only after this does tryStartRitual() allow a new one, escape prevention stop, and block placement resume. Also despawns any jumposcorroos the 50%-health phase spawned, since they must not linger once the encounter ends (boss defeated or player died/reset). */
     private static void endEncounter(RitualInstance instance) {
+        despawnOwnedJumposcorroos(instance);
         if (ACTIVE == instance) {
             ACTIVE = null;
         }

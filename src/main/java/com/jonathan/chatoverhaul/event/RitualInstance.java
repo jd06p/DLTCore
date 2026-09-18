@@ -33,6 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Entity303RitualManager's entity-join handler for how clones get added
  * here) - a stray/pre-existing clone that was never tagged as belonging to
  * this ritual is simply never in this set, and so never counts.
+ *
+ * ownedJumposcorroos is the same idea applied to the thebrokenscript
+ * jumposcorroos this ritual's 50%-health phase spawns around the player:
+ * only entities recorded here are ever despawned when the encounter ends,
+ * so pre-existing jumposcorroos somewhere in the dimension are never
+ * touched by the cleanup.
  */
 final class RitualInstance {
 
@@ -43,6 +49,7 @@ final class RitualInstance {
 
     volatile RitualState state = RitualState.STARTING;
     final Set<UUID> ownedClones = ConcurrentHashMap.newKeySet();
+    final Set<UUID> ownedJumposcorroos = ConcurrentHashMap.newKeySet();
     volatile int killCount = 0;
     volatile long ticksRemaining = -1;
     volatile boolean oneMinuteWarningFired = false;

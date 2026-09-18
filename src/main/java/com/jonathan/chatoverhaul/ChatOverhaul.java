@@ -2,6 +2,7 @@ package com.jonathan.chatoverhaul;
 
 import com.jonathan.chatoverhaul.client.ChatOverhaulConfig;
 import com.jonathan.chatoverhaul.config.ChatOverhaulServerConfig;
+import com.jonathan.chatoverhaul.network.ChatOverhaulNetwork;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -50,6 +51,19 @@ import net.minecraftforge.fml.config.ModConfig;
  *    matching the established pattern already used for other entities.
  *  - event/IntegrityBossBarHandler: red vanilla-style boss bar tracking
  *    health for thebrokenscript:integrity_bossfight.
+ *  - event/Day60Event, event/Day60Tracker: a world-level, one-shot scripted
+ *    sequence that plays when the overworld's displayed day counter reaches
+ *    in-game day 60 (reversed "<\u273A>" dialogue with a 10-second silence,
+ *    /stopsound, minecraft:music.end, then Darkness + screenshake + the
+ *    spawn scream + thebrokenscript:nullishereloop under a rapid 3-cycle
+ *    glitch title sequence) - see Day60Event's class doc for the full
+ *    timeline and the zero-indexed day-counting fix.
+ *  - network/ChatOverhaulNetwork, network/ClientAlertPacket,
+ *    client/FakeLwjglAlert: the client-bound channel that fires the fake
+ *    "LWJGL Alert" ("I WILL BE BACK") when the Entity303 boss is actually
+ *    killed. The alert itself is strictly client-side (native Windows
+ *    MessageBox via JNA, reached through DistExecutor), so a dedicated
+ *    server never loads or runs any of it.
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra
@@ -65,6 +79,7 @@ public class ChatOverhaul {
     public static final String MODID = "chatoverhaul";
 
     public ChatOverhaul() {
+        ChatOverhaulNetwork.register();
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ChatOverhaulConfig.SPEC);
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ChatOverhaulServerConfig.SPEC);
     }
