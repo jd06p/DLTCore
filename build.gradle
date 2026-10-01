@@ -60,6 +60,7 @@ minecraft {
 mixin {
     add sourceSets.main, 'chatoverhaul.refmap.json'
     config 'mixins.chatoverhaul.json'
+    config 'mixins.chatoverhaul.arg.server.json'
 }
 
 repositories {
@@ -119,7 +120,7 @@ jar {
             'Implementation-Title'    : project.name,
             'Implementation-Version'  : project.jar.archiveVersion,
             'Implementation-Vendor'   : 'jonathan',
-            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json'
+            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json,mixins.chatoverhaul.arg.server.json'
         ])
     }
 }
