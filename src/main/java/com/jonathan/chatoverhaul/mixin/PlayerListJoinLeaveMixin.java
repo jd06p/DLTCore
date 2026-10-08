@@ -1,5 +1,6 @@
 package com.jonathan.chatoverhaul.mixin;
 
+import com.jonathan.chatoverhaul.util.LocalPlayNames;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -68,7 +69,11 @@ public abstract class PlayerListJoinLeaveMixin {
             return;
         }
 
-        String name = extractName(contents.getArgs());
+        String name = LocalPlayNames.normalize(extractName(contents.getArgs()));
+        if (name.trim().isEmpty()) {
+            ci.cancel();
+            return;
+        }
         String text = name + (joining ? " has connected to Local Play!" : " has disconnected from Local Play!");
 
         ci.cancel();

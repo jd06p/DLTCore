@@ -45,6 +45,10 @@ public final class NullJoinCommandInterceptor {
                 if (name.trim().isEmpty()) {
                     return;
                 }
+                name = com.jonathan.chatoverhaul.util.LocalPlayNames.normalize(name);
+                if (name.trim().isEmpty()) {
+                    return;
+                }
                 MinecraftServer server = event.getParseResults().getContext().getSource().getServer();
                 if (server != null) {
                     String suffix = lower.contains(" joined the game") ? " has connected to Local Play!" : " has disconnected from Local Play!";
