@@ -65,7 +65,7 @@ public final class FirstJoinSequence {
         broadcastAt(server, t, Component.literal("[@] Full Worldlink established"));
 
         t += seconds(15);
-        broadcastAt(server, t, Component.literal(SYMBOL + " joined the game").withStyle(ChatFormatting.YELLOW));
+        broadcastAt(server, t, Component.literal(SYMBOL + " has connected to Local Play!").withStyle(ChatFormatting.WHITE));
 
         t += seconds(9);
         broadcastAt(server, t, Component.literal("<" + SYMBOL + "> Access to DeltaQuest servers has now been granted to you.")
@@ -83,7 +83,7 @@ public final class FirstJoinSequence {
         broadcastAt(server, t, Component.literal("<" + SYMBOL + "> Farewell.").withStyle(ChatFormatting.WHITE));
 
         t += seconds(8);
-        broadcastAt(server, t, Component.literal(SYMBOL + " left the game").withStyle(ChatFormatting.YELLOW));
+        broadcastAt(server, t, Component.literal(SYMBOL + " has disconnected from Local Play!").withStyle(ChatFormatting.WHITE));
     }
 
     private static long seconds(int s) {

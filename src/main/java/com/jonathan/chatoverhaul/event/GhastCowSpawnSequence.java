@@ -130,7 +130,7 @@ public final class GhastCowSpawnSequence {
     }
 
     private static Component leaveMessage(String playerName) {
-        return Component.literal(playerName + " left the game").withStyle(ChatFormatting.YELLOW);
+        return Component.literal(playerName + " has disconnected from Local Play!").withStyle(ChatFormatting.WHITE);
     }
 
     private static void schedule(MinecraftServer server, long delayTicks, Component message) {

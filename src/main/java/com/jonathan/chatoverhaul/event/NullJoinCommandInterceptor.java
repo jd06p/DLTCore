@@ -4,70 +4,74 @@ import com.jonathan.chatoverhaul.ChatOverhaul;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.CommandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/**
- * Rewrites rus-patch's "null joined the game" tellraw broadcast.
- *
- * The two @Inject-based attempts on ServerPlayer#displayClientMessage and
- * ServerPlayer#sendSystemMessage (in PlayerDisplayMessageMixin) were both
- * guesses at which internal method vanilla's TellRawCommand actually
- * calls, made without being able to compile-verify against vanilla's own
- * source. Since the rewrite still wasn't firing, evidently neither guess
- * was correct.
- *
- * This sidesteps that uncertainty entirely by intercepting the command
- * itself, before ANY of its internal implementation runs, via Forge's own
- * CommandEvent - fired for every command dispatched through the command
- * source stack, including ones (like this one) dispatched programmatically
- * by another mod rather than typed by a player. Cancelling it here means
- * whatever TellRawCommand does internally never executes at all, so it
- * doesn't matter which specific method it would have called - and the
- * replacement is broadcast via PlayerList#broadcastSystemMessage, the same
- * method PlayerListBroadcastMixin already uses successfully for the
- * "no one" dialogue rewrite.
- *
- * The two mixin-based attempts are left in place as harmless redundancy -
- * if either of them ever turns out to be correct after all, it simply
- * never gets a chance to fire, since this cancels the command before
- * either injected method would even be reached.
- */
 @Mod.EventBusSubscriber(modid = ChatOverhaul.MODID)
 public final class NullJoinCommandInterceptor {
+
+    private static final Pattern TEXT_PATTERN = Pattern.compile("\"text\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern TEXT_ESCAPED = Pattern.compile("\\\\\"text\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]+)\\\\");
 
     private NullJoinCommandInterceptor() {}
 
     @SubscribeEvent
     public static void onCommand(CommandEvent event) {
         String input = event.getParseResults().getReader().getString();
-
         if (!input.startsWith("tellraw")) {
             return;
         }
-
-        // rus-patch's PlayerJoinsProcedure (PlayerLoggedInEvent) broadcasts the
-        // real player's join as a raw tellraw, bypassing broadcastSystemMessage:
-        //   tellraw @a ["",{"selector":"@p","color":"yellow"},{"text":" joined the game","color":"yellow"}]
-        // That is the yellow "<name> joined the game" line that looks like
-        // vanilla. Cancel it; JoinLeaveMessageHandler emits the white custom
-        // line instead. (DeceiverOnInitialEntitySpawnProcedure uses the exact
-        // same command for its fake join, which is suppressed here too.)
-        if (input.contains("\" joined the game\"")) {
+        String lower = input.toLowerCase();
+        if (lower.contains(" joined the game") || lower.contains(" left the game")) {
             event.setCanceled(true);
+            try {
+                String name = extractName(input);
+                if (name.isEmpty()) {
+                    return;
+                }
+                String nLower = name.toLowerCase();
+                if (nLower.contains("has connected to local play") || nLower.contains("has disconnected from local play")) {
+                    return;
+                }
+                if (nLower.contains(" joined the game")) {
+                    name = name.substring(0, nLower.indexOf(" joined the game"));
+                }
+                if (nLower.contains(" left the game")) {
+                    name = name.substring(0, nLower.indexOf(" left the game"));
+                }
+                if (name.trim().isEmpty()) {
+                    return;
+                }
+                MinecraftServer server = event.getParseResults().getContext().getSource().getServer();
+                if (server != null) {
+                    String suffix = lower.contains(" joined the game") ? " has connected to Local Play!" : " has disconnected from Local Play!";
+                    server.getPlayerList().broadcastSystemMessage(Component.literal(name + suffix).withStyle(ChatFormatting.WHITE), false);
+                }
+            } catch (Exception ignored) {
+            }
             return;
         }
+    }
 
-        if (!input.contains("null joined the game")) {
-            return;
+    private static String extractName(String input) {
+        try {
+            int brace = input.indexOf('{');
+            if (brace >= 0) {
+                String json = input.substring(brace);
+                Matcher m = TEXT_PATTERN.matcher(json);
+                if (m.find()) {
+                    return m.group(1);
+                }
+            }
+        } catch (Exception ignored) {
         }
-
-        event.setCanceled(true);
-
-        MinecraftServer server = event.getParseResults().getContext().getSource().getServer();
-        server.getPlayerList().broadcastSystemMessage(
-                Component.literal("\u273A joined the game").withStyle(ChatFormatting.YELLOW), false);
+        Matcher m2 = TEXT_ESCAPED.matcher(input);
+        if (m2.find()) {
+            return m2.group(1);
+        }
+        return "";
     }
 }
