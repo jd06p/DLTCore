@@ -16,6 +16,11 @@ import net.minecraftforge.fml.config.ModConfig;
  *  - event/FirstJoinSequence, event/TickScheduler: the scripted first-join
  *    chat sequence.
  *  - event/CrossMechanicHandler: the Wonderland cross compat mechanic.
+ *  - event/RecipeUnlockHandler: unlocks every registered recipe (vanilla and
+ *    mod-added) for a player on login, via the vanilla recipe-book API.
+ *  - event/JumpgradeAbilityHandler: right-click the_arg_container:jumpgrade to
+ *    trade 5 XP levels for 120s of no-particle Jump Boost III, a 120s item
+ *    cooldown, and the level-up sound (server-side Forge event, item untouched).
  *  - event/DimensionKeepInventoryHandler: dimension-scoped keep inventory.
  *  - event/ElytraRestrictionHandler: Elytra shutoff near specific entities.
  *  - event/DimensionEntrySlowFallingHandler: safety Slow Falling on
