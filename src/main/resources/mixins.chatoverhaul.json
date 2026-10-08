@@ -6,7 +6,12 @@
   "refmap": "chatoverhaul.refmap.json",
   "mixins": [
     "PlayerDisplayMessageMixin",
-    "PlayerListBroadcastMixin"
+    "PlayerListBroadcastMixin",
+    "PlayerListCheatsNoticeMixin",
+    "BedBlockHubSleepMixin",
+    "ServerPlayerHubSleepMixin",
+    "PlayerListJoinLeaveMixin",
+    "ServerGamePacketListenerLeaveMixin"
   ],
   "client": [],
   "server": [],

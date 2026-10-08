@@ -44,7 +44,23 @@ public final class NullJoinCommandInterceptor {
     public static void onCommand(CommandEvent event) {
         String input = event.getParseResults().getReader().getString();
 
-        if (!input.startsWith("tellraw") || !input.contains("null joined the game")) {
+        if (!input.startsWith("tellraw")) {
+            return;
+        }
+
+        // rus-patch's PlayerJoinsProcedure (PlayerLoggedInEvent) broadcasts the
+        // real player's join as a raw tellraw, bypassing broadcastSystemMessage:
+        //   tellraw @a ["",{"selector":"@p","color":"yellow"},{"text":" joined the game","color":"yellow"}]
+        // That is the yellow "<name> joined the game" line that looks like
+        // vanilla. Cancel it; JoinLeaveMessageHandler emits the white custom
+        // line instead. (DeceiverOnInitialEntitySpawnProcedure uses the exact
+        // same command for its fake join, which is suppressed here too.)
+        if (input.contains("\" joined the game\"")) {
+            event.setCanceled(true);
+            return;
+        }
+
+        if (!input.contains("null joined the game")) {
             return;
         }
 
