@@ -116,6 +116,10 @@ import net.minecraftforge.fml.config.ModConfig;
  *    flat 500-XP reward granted exactly once on right-click of a completed
  *    quest before advancing, and a client-only top-right HUD line shown while
  *    the item is held in the main hand. No mixins are involved.
+ *  - event/NoiseSupHandler: right-click the_arg_container:noise_sup consumes
+ *    exactly one, plays minecraft:entity.player.burp, applies Speed II
+ *    (amplifier 1, no particles) for 10s, and grants a 30s item cooldown
+ *    (server-authoritative). No mixins involved.
  *
  * Both config classes reference no client-only classes (they're plain
  * ForgeConfigSpec), so registering them here in the common constructor is
