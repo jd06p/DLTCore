@@ -6,6 +6,7 @@
   "mixins": [
     "JukeboxRitualGateMixin",
     "DismantlerSilverBlockCompat",
+    "FallOverwriteMixin",
     "DashSoundMixin",
     "LongJumpSoundMixin"
   ],

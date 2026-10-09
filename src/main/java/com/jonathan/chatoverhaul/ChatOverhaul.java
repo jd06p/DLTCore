@@ -21,6 +21,20 @@ import net.minecraftforge.fml.config.ModConfig;
  *  - event/JumpgradeAbilityHandler: right-click the_arg_container:jumpgrade to
  *    trade 5 XP levels for 120s of no-particle Jump Boost III, a 120s item
  *    cooldown, and the level-up sound (server-side Forge event, item untouched).
+ *  - event/ExchangerAbilityHandler: right-click the_arg_container:exchanger to
+ *    trade 10 XP levels for 70s of no-particle Strength II and Resistance III,
+ *    the_wonderland:thespawn_laugh, and a 70s item cooldown (server-side Forge
+ *    event, item untouched); also replaces the item's shipped tooltip text via
+ *    the Forge tooltip event (the shipped ARG item has no right-click mechanic).
+ *  - event/DismantlerToggleHandler: chat code A7d5 toggles the held
+ *    the_arg_container:dismantler between Inactive (passive fall-damage
+ *    negation on while held) and Activated (infinite no-particle Haste III
+ *    while held, fall negation off); player-only messages + orb-pickup sound,
+ *    mode resets to Inactive on disconnect.
+ *  - mixin/arg/FallOverwriteMixin: cancels The ARG Container's intrinsic
+ *    per-tick fallDistance zeroing (FallOverwriteProcedure) only while the
+ *    Dismantler is activated, so activated players take normal fall damage
+ *    while the inactive Dismantler keeps its original negation.
  *  - event/DimensionKeepInventoryHandler: dimension-scoped keep inventory.
  *  - event/ElytraRestrictionHandler: Elytra shutoff near specific entities.
  *  - event/DimensionEntrySlowFallingHandler: safety Slow Falling on
