@@ -94,6 +94,13 @@ import net.minecraftforge.fml.config.ModConfig;
  *    on a fresh trigger, recovers already-corrupted sessions from saved
  *    options. Client-side only (mixins.chatoverhaul.instability.json,
  *    "required": false).
+ *  - mixin/wonderland/*TooltipMixin: removes the descriptions/tooltips from
+ *    eight The Wonderland items (dark_cross, light_cross, silver_cross,
+ *    silver_rosary_chestplate, gold_cross, broken_cross, ethereal_pillow,
+ *    dreamcatcher) by cancelling each item's appendHoverText override; the
+ *    items themselves, their recipes and their other tooltip lines
+ *    (attributes, etc.) are untouched. Client-side only
+ *    (mixins.chatoverhaul.wonderland.json, "required": false).
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra
