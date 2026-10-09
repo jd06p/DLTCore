@@ -11,14 +11,13 @@ import java.util.Optional;
 /**
  * chatoverhaul's Forge network channel - the same SimpleChannel pattern the
  * Integrity bossfight mod uses to deliver its client-only fake-LWJGL-alert
- * triggers. Currently carries exactly one message type, the client-bound
- * {@link ClientAlertPacket}, which lets the server ask every player's client
- * to run a cosmetic window (see client/FakeLwjglAlert) without the server
- * itself ever touching any client class.
+ * triggers. Carries two client-bound message types: {@link ClientAlertPacket}
+ * (the cosmetic fake-alert trigger, id 0) and {@link QuestSyncPacket} (the
+ * per-player quest-state snapshot the quest HUD renders from, id 1).
  *
- * Everything in this class is common-side; the channel and packet are
+ * Everything in this class is common-side; the channel and packets are
  * registered once from the mod constructor, which runs on both physical
- * sides. The client-only work happens inside the packet handler under
+ * sides. The client-only work happens inside each packet handler under
  * DistExecutor, so a dedicated server can send these packets freely and the
  * client classes are never loaded there.
  */
@@ -43,6 +42,14 @@ public final class ChatOverhaulNetwork {
                 ClientAlertPacket::encode,
                 ClientAlertPacket::new,
                 ClientAlertPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT)
+        );
+        CHANNEL.registerMessage(
+                1,
+                QuestSyncPacket.class,
+                QuestSyncPacket::encode,
+                QuestSyncPacket::new,
+                QuestSyncPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT)
         );
     }

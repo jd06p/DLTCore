@@ -105,6 +105,17 @@ import net.minecraftforge.fml.config.ModConfig;
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra
  *    restriction radius.
+ *  - quest/QuestDefinition, quest/QuestData, event/QuestSystemHandler,
+ *    network/QuestSyncPacket, client/ClientQuestState,
+ *    client/QuestHudOverlay, client/ClientQuestLifecycle: the quest system
+ *    driven by the existing the_arg_container:quest_manager item. One active
+ *    quest per player (fixed 7-quest order, deterministic), progress counted
+ *    server-side via pickup/craft/smelt/kill events, state persisted in the
+ *    player's own persistent NBT (survives death, disconnect, dimension
+ *    changes, server restarts; shared across every quest_manager stack), a
+ *    flat 500-XP reward granted exactly once on right-click of a completed
+ *    quest before advancing, and a client-only top-right HUD line shown while
+ *    the item is held in the main hand. No mixins are involved.
  *
  * Both config classes reference no client-only classes (they're plain
  * ForgeConfigSpec), so registering them here in the common constructor is
