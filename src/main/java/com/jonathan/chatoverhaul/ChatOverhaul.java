@@ -83,6 +83,13 @@ import net.minecraftforge.fml.config.ModConfig;
  *    killed. The alert itself is strictly client-side (native Windows
  *    MessageBox via JNA, reached through DistExecutor), so a dedicated
  *    server never loads or runs any of it.
+ *  - mixin/instability/GItchtimerupdateProcedureMixin +
+ *    client/InstabilityWindowGuard: lets the INSTABILITY music-disc's full
+ *    window-glitch sequence play out, then restores the player's real
+ *    window and cancels the disc's forever-running procedure (it never
+ *    restores itself). Records a pristine snapshot on a fresh trigger and
+ *    recovers already-corrupted sessions from saved options. Client-side
+ *    only (mixins.chatoverhaul.instability.json, "required": false).
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra

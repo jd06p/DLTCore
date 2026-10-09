@@ -99,6 +99,14 @@ dependencies {
     // The Wonderland installed.
     compileOnly files('libs/the_wonderland-3.0.3-1.20.1-forge.jar')
 
+    // Needed only so the mixin annotation processor can resolve the
+    // @Mixin(targets=...) class name in GItchtimerupdateProcedureMixin (the
+    // processor errors out if it cannot find the target class on the
+    // classpath). Not bundled or required at runtime -
+    // mixins.chatoverhaul.instability.json is "required": false, so
+    // chatoverhaul still loads fine without the INSTABILITY mod installed.
+    compileOnly files('libs/INSTABILITY.jar')
+
     // JNA (Java Native Access) provides the native Windows MessageBox used for
     // the fake "LWJGL Alert" on Entity303 death (client/FakeLwjglAlert).
     // Deliberately NOT bundled into the mod jar: the launcher already ships a
@@ -121,7 +129,7 @@ jar {
             'Implementation-Title'    : project.name,
             'Implementation-Version'  : project.jar.archiveVersion,
             'Implementation-Vendor'   : 'jonathan',
-            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json,mixins.chatoverhaul.arg.server.json,mixins.chatoverhaul.rus.server.json'
+            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json,mixins.chatoverhaul.arg.server.json,mixins.chatoverhaul.rus.server.json,mixins.chatoverhaul.instability.json'
         ])
     }
 }

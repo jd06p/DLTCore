@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.jonathan.chatoverhaul.mixin.instability",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "client": [
+    "GItchtimerupdateProcedureMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
