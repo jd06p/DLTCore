@@ -87,9 +87,13 @@ import net.minecraftforge.fml.config.ModConfig;
  *    client/InstabilityWindowGuard: lets the INSTABILITY music-disc's full
  *    window-glitch sequence play out, then restores the player's real
  *    window and cancels the disc's forever-running procedure (it never
- *    restores itself). Records a pristine snapshot on a fresh trigger and
- *    recovers already-corrupted sessions from saved options. Client-side
- *    only (mixins.chatoverhaul.instability.json, "required": false).
+ *    restores itself). Recovery is keyed on the mod's own discPlayTicks
+ *    counter (>= 5540, its own end-of-script constant) rather than window
+ *    geometry or a timeout, so the effect always plays out in full; a fresh
+ *    trigger in another world re-arms the guard. Records a pristine snapshot
+ *    on a fresh trigger, recovers already-corrupted sessions from saved
+ *    options. Client-side only (mixins.chatoverhaul.instability.json,
+ *    "required": false).
  *  - client/VersionOverlay, client/ChatOverhaulConfig: the dimension-aware
  *    HUD overlay and its (client) config.
  *  - config/ChatOverhaulServerConfig: the (server) config for the Elytra

@@ -22,45 +22,71 @@ import java.lang.reflect.Method;
  * by an {@code isClientSide()} check).
  *
  * <p>Root cause (proven from INSTABILITY's bytecode, not guessed): the disc's
- * {@code onPlayerTick} handler runs forever once
- * {@code InstabilityRightclickedOnBlockProcedure} sets {@code isDiscPlaying}
- * (nothing ever resets it), and with every tick the procedure force-applies
- * the same torn window state: windowed {@code 854x480}, centered, with the
- * hardcoded title {@code "Minecraft Forge* 1.20.1 - Singleplayer"} (phases
- * before tick 5540 shake, jitter, apply the invert/creeper shaders and rename
- * the window instead). It never restores anything, so a player's original
- * window mode, size, position and title are lost.
+ * {@code onPlayerTick} handler fires on every player tick and, once
+ * {@code InstabilityRightclickedOnBlockProcedure} has set {@code isDiscPlaying}
+ * (nothing ever resets it), force-applies the same torn window state forever:
+ * windowed {@code 854x480} with the hardcoded title
+ * {@code "Minecraft Forge* 1.20.1 - Singleplayer"}. The full glitch (jitter,
+ * shaking, invert/creeper shaders, scary titles, chat, the fake dialog) plays
+ * out for exactly {@link #SETTLE_TICKS} of the mod's own {@code discPlayTicks}
+ * counter, then parks the window in the torn state with no restore path, so a
+ * player's original window mode, size, position and title are lost for the
+ * rest of the game session.
  *
- * <p>This guard lets the full intended glitch play out (particles, rain, time
- * change, chat, shaders, scary titles, the fake error dialog - all preserved)
- * and only acts once the effect has actually settled: the INSTABILITY settle
- * phase parks the window at the centered 854x480 state and holds it there
- * forever, so the guard detects a long, uninterrupted run of that exact window
- * state ({@link #SETTLE_HOLD_TICKS} - long enough to clear the ~160-tick
- * centered pause the intro plays well before the real settle), restores the
- * player's real window, and then cancels the procedure forever via the mixin,
- * so the corruption can never re-apply.
+ * <p>This guard lets the entire scripted sequence play out and only acts when
+ * the effect is genuinely over. It keys the restore on the mod's own lifecycle
+ * counter every tick ({@code discPlayTicks >= SETTLE_TICKS}) rather than on
+ * window geometry or an arbitrary timeout, because the mod's quiet intro phase
+ * (ticks 0-1040) parks the window in a state that is geometrically identical
+ * to the final settle state - a geometry-only signal fires far too early and
+ * cuts the effect short. The mod's own counter (read through reflection, so
+ * there is no compile-time/runtime dependency on the mod) is the only reliable
+ * "this effect actually reached its end-script" signal; {@link #SETTLE_TICKS}
+ * is the mod's own final-phase constant taken from its bytecode.
  *
- * <p>Restore strategy:
+ * <p>Restore paths:
  * <ul>
- *   <li>Fresh trigger - the mod's own {@code discPlayTicks} was 0 when the
- *       guard first saw the disc (read once through reflection, no
- *       compile-time/runtime dependency on the mod): the window is still
- *       pristine, so the exact original state is snapshotted and restored -
- *       fullscreen comes back on the same monitor, windowed comes back to the
- *       same size and position - plus the game's own title via
- *       {@code Minecraft.updateTitle()}.</li>
+ *   <li>Completed effect: {@code discPlayTicks >= 5540} for
+ *       {@link #CONFIRM_TICKS} consecutive settled ticks (the mod's settle
+ *       phase holds the window forever). Then the mod is cancelled so it can
+ *       never re-tear the window.</li>
+ *   <li>Leftover corruption: the window is torn (windowed {@code 854x480})
+ *       while the mod reports {@code isDiscPlaying == false} - e.g. leaving
+ *       mid-glitch, or booting into a save that was abandoned while torn.
+ *       Restored from saved options after {@link #CONFIRM_TICKS} ticks.</li>
+ * </ul>
+ *
+ * <p>Restore strategy, decided once at the tick the guard first engages:
+ * <ul>
+ *   <li>Fresh trigger - the mod's {@code discPlayTicks} was 0 when the guard
+ *       first saw the disc and the window was not already torn: the exact
+ *       original state is snapshotted and restored - fullscreen comes back on
+ *       the same monitor, windowed comes back to the same size and position -
+ *       plus the game's own title via {@code Minecraft.updateTitle()}.</li>
  *   <li>Already-corrupted session (the disc was left playing in an earlier
  *       launch, or a repeat trigger): the true original is unknowable, so the
  *       window is recovered from saved options - {@code Options.fullscreen}
  *       decides mode, {@code overrideWidth/overrideHeight} (the saved windowed
- *       resolution) is used when present, and the window is re-centered.</li>
+ *       resolution) is used when present, and the window is re-centered on the
+ *       primary monitor.</li>
  * </ul>
  *
+ * <p>The guard records a restored effect and keeps cancelling the mod only for
+ * as long as that same effect is in its forever-settling tail
+ * ({@code isDiscPlaying == true && discPlayTicks >= SETTLE_TICKS}). A truly
+ * fresh effect in another world (new save, fresh data: {@code discPlayTicks}
+ * back below {@link #SETTLE_TICKS}) re-arms the guard and snapshots the new
+ * pristine state, so repeated disc uses keep working without stale state.
+ *
  * <p>If the reflective read ever fails (mod class renamed, etc.) the guard
- * degrades to judging "pristine" from the window state itself and still
- * recovers; every failure path is swallowed - these are cosmetic fixes and
- * must never take the player's client down.
+ * degrades to a pure-geometry fallback: the restore is gated on how long the
+ * window has been continuously torn (the mod tears it from disc-tick 0 and
+ * holds it, so the guard's own torn-duration counter tracks
+ * {@code discPlayTicks})
+ * plus the settled confirm streak - never a premature cutoff - and the
+ * leftover path is disabled (a torn window during the intro cannot be told
+ * apart from a stuck one). Every failure path is swallowed - these are
+ * cosmetic fixes and must never take the player's client down.
  */
 @OnlyIn(Dist.CLIENT)
 public final class InstabilityWindowGuard {
@@ -69,12 +95,23 @@ public final class InstabilityWindowGuard {
     private static final int WINDOWED_H = 480;
 
     /**
-     * Consecutive settled-signature ticks required before restoring. The mod's
-     * settle phase holds the window in that state forever, so 400 ticks (20s)
-     * is comfortably past the ~160-tick centered pause in its intro phase - the
-     * only other time the window ever looks identical while the disc plays.
+     * Consecutive settled ticks required before restoring. 60 ticks = 3
+     * seconds at 20 tps: long enough to ride out any single-frame glitch,
+     * short enough to react quickly once the effect is truly over.
      */
-    private static final int SETTLE_HOLD_TICKS = 400;
+    private static final int CONFIRM_TICKS = 60;
+
+    /**
+     * INSTABILITY's own scripted-playback ceiling: its settle phase (end of
+     * the script, at which point it parks the torn 854x480 window forever)
+     * starts when its own {@code discPlayTicks} counter reaches this value.
+     * Verified against the mod's bytecode (sipush 5540). Keying the restore on
+     * this - not on geometry or a timeout - is what lets the full glitch play
+     * out while still guaranteeing a clean recovery, and what excludes the
+     * mod's geometrically-identical intro pause (ticks 0-1040).
+     */
+    private static final double SETTLE_TICKS = 5540.0d;
+
     private static final int POS_TOLERANCE = 8;
     private static final int SIZE_TOLERANCE = 2;
     private static final int FALLBACK_WINDOWED_W = 1280;
@@ -83,11 +120,14 @@ public final class InstabilityWindowGuard {
     private static final String MAP_VARIABLES_CLASS =
             "net.mcreator.instabilitymusicdisk.network.InstabilitymusicdiskModVariables$MapVariables";
 
-    private static boolean sealed;
+    private static boolean restored;
     private static boolean engaged;
     private static boolean pristine;
     private static boolean snapshotValid;
+    private static boolean reflectionBroken;
     private static int settleStreak;
+    private static int leftoverStreak;
+    private static int tornStreak;
 
     private static long origMonitor;
     private static int origX;
@@ -101,63 +141,111 @@ public final class InstabilityWindowGuard {
     private static Class<?> mapVariables;
     private static Method mapVariablesGet;
     private static Field discPlayTicks;
-    private static boolean reflectionBroken;
+    private static Field isDiscPlaying;
 
     private InstabilityWindowGuard() {
     }
 
     /**
-     * Called from the mixin on every tick the INSTABILITY procedure is about to
-     * run. Returns true (cancelling the procedure) only after the window has
-     * been restored once.
+     * Called from the mixin on every player tick (before the procedure's body,
+     * which itself no-ops when {@code isDiscPlaying} is false). Returns whether
+     * the procedure call should be cancelled: only while a fully-restored
+     * effect is in its forever-settling tail, so the mod can never re-apply its
+     * corruption, and never while an effect is still playing out.
      */
     public static boolean shouldCancel(LevelAccessor level) {
-        if (sealed) {
-            return true;
-        }
         try {
-            tick(level);
+            return tick(level);
         } catch (Throwable t) {
-            sealed = true;
+            return false;
         }
-        return sealed;
     }
 
-    private static void tick(LevelAccessor level) {
+    private static boolean tick(LevelAccessor level) {
         Minecraft minecraft = Minecraft.getInstance();
         Window window = minecraft.getWindow();
         long handle = window.getWindow();
         if (handle == 0L || GLFW.glfwGetCurrentContext() == 0L) {
-            return;
+            return restored;
         }
+
+        InstabilityState state = readState(level);
+        Double playTicks = state == null ? null : state.discPlayTicks;
+        Boolean playing = state == null ? null : state.isDiscPlaying;
+
+        boolean torn = isTornSignature(handle);
+        tornStreak = torn ? tornStreak + 1 : 0;
+
+        // A restored effect was replaced by a genuinely fresh one (a new
+        // save/world starts at discPlayTicks 0): re-arm rather than stay frozen.
+        if (restored && playing == Boolean.TRUE && playTicks != null && playTicks < SETTLE_TICKS) {
+            rearm();
+        }
+
         if (!engaged) {
             engaged = true;
-            decideMode(level, window, handle);
+            decideMode(level, window, handle, torn);
         }
-        int[] xPos = new int[1];
-        int[] yPos = new int[1];
-        int[] width = new int[1];
-        int[] height = new int[1];
-        GLFW.glfwGetWindowPos(handle, xPos, yPos);
-        GLFW.glfwGetWindowSize(handle, width, height);
-        boolean settled = isSettledSignature(handle, xPos[0], yPos[0], width[0], height[0]);
+
+        boolean settled = false;
+        if (torn) {
+            int[] xPos = new int[1];
+            int[] yPos = new int[1];
+            GLFW.glfwGetWindowPos(handle, xPos, yPos);
+            settled = isCentered(xPos[0], yPos[0]);
+        }
         settleStreak = settled ? settleStreak + 1 : 0;
-        if (settleStreak >= SETTLE_HOLD_TICKS) {
-            restore(window, handle);
-            sealed = true;
+        if (playing == null) {
+            leftoverStreak = 0;
+        } else if (torn && !playing) {
+            leftoverStreak++;
+        } else {
+            leftoverStreak = 0;
         }
+
+        // Keep cancelling only while the same restored effect is still in its
+        // settle tail; an inert world falls through so a fresh leftover or a
+        // fresh effect in another world can still be handled below.
+        if (restored
+                && (reflectionBroken
+                        || (playing == Boolean.TRUE && playTicks != null && playTicks >= SETTLE_TICKS))) {
+            return true;
+        }
+
+        boolean completed =
+                playTicks != null && playTicks >= SETTLE_TICKS && settleStreak >= CONFIRM_TICKS;
+        boolean leftover = playing != null && !playing && leftoverStreak >= CONFIRM_TICKS;
+        boolean fallbackCompleted =
+                playTicks == null && tornStreak >= (long) SETTLE_TICKS && settleStreak >= CONFIRM_TICKS;
+
+        if (completed || leftover || fallbackCompleted) {
+            restore(window, handle);
+            restored = true;
+            return completed || fallbackCompleted;
+        }
+        return false;
     }
 
-    private static void decideMode(LevelAccessor level, Window window, long handle) {
+    private static void rearm() {
+        restored = false;
+        engaged = false;
+        pristine = false;
+        snapshotValid = false;
+        settleStreak = 0;
+        leftoverStreak = 0;
+        tornStreak = 0;
+    }
+
+    private static void decideMode(LevelAccessor level, Window window, long handle, boolean tornAtEngage) {
+        boolean freshFromTicks = false;
         if (!reflectionBroken) {
-            try {
-                pristine = phaseAtEngage(level) < 0.5d;
-            } catch (Throwable t) {
-                reflectionBroken = true;
-            }
+            InstabilityState state = readState(level);
+            freshFromTicks = state != null && state.discPlayTicks != null && state.discPlayTicks < 0.5d;
         }
         if (reflectionBroken) {
-            pristine = !sourceAlreadyCorrupted(window, handle);
+            pristine = !tornAtEngage;
+        } else {
+            pristine = freshFromTicks && !tornAtEngage;
         }
         if (pristine) {
             snapshot(window, handle);
@@ -191,26 +279,18 @@ public final class InstabilityWindowGuard {
         }
     }
 
-    private static boolean sourceAlreadyCorrupted(Window window, long handle) {
-        if (window.isFullscreen() && GLFW.glfwGetWindowMonitor(handle) == 0L) {
-            return true;
-        }
-        int[] xPos = new int[1];
-        int[] yPos = new int[1];
-        int[] width = new int[1];
-        int[] height = new int[1];
-        GLFW.glfwGetWindowPos(handle, xPos, yPos);
-        GLFW.glfwGetWindowSize(handle, width, height);
-        return isSettledSignature(handle, xPos[0], yPos[0], width[0], height[0]);
-    }
-
-    private static boolean isSettledSignature(long handle, int x, int y, int width, int height) {
+    private static boolean isTornSignature(long handle) {
         if (GLFW.glfwGetWindowMonitor(handle) != 0L) {
             return false;
         }
-        if (Math.abs(width - WINDOWED_W) > SIZE_TOLERANCE || Math.abs(height - WINDOWED_H) > SIZE_TOLERANCE) {
-            return false;
-        }
+        int[] width = new int[1];
+        int[] height = new int[1];
+        GLFW.glfwGetWindowSize(handle, width, height);
+        return Math.abs(width[0] - WINDOWED_W) <= SIZE_TOLERANCE
+                && Math.abs(height[0] - WINDOWED_H) <= SIZE_TOLERANCE;
+    }
+
+    private static boolean isCentered(int x, int y) {
         long monitor = GLFW.glfwGetPrimaryMonitor();
         GLFWVidMode mode = monitor == 0L ? null : GLFW.glfwGetVideoMode(monitor);
         if (mode == null) {
@@ -256,16 +336,41 @@ public final class InstabilityWindowGuard {
         }
     }
 
-    private static double phaseAtEngage(LevelAccessor level) throws ReflectiveOperationException {
-        if (mapVariables == null) {
-            mapVariables = Class.forName(MAP_VARIABLES_CLASS);
-            mapVariablesGet = mapVariables.getMethod("get", LevelAccessor.class);
-            discPlayTicks = mapVariables.getField("discPlayTicks");
+    /**
+     * Per-tick read of the mod's own state through reflection. Returns null
+     * (and permanently marks reflection broken) on any failure so the guard
+     * degrades to the geometry-based fallback instead of failing loudly.
+     */
+    private static InstabilityState readState(LevelAccessor level) {
+        if (reflectionBroken) {
+            return null;
         }
-        Object variables = mapVariablesGet.invoke(null, level);
-        if (variables == null) {
-            return 0.0d;
+        try {
+            if (mapVariables == null) {
+                mapVariables = Class.forName(MAP_VARIABLES_CLASS);
+                mapVariablesGet = mapVariables.getMethod("get", LevelAccessor.class);
+                discPlayTicks = mapVariables.getField("discPlayTicks");
+                isDiscPlaying = mapVariables.getField("isDiscPlaying");
+            }
+            Object variables = mapVariablesGet.invoke(null, level);
+            if (variables == null) {
+                return new InstabilityState(null, null);
+            }
+            return new InstabilityState(discPlayTicks.getDouble(variables), isDiscPlaying.getBoolean(variables));
+        } catch (Throwable t) {
+            reflectionBroken = true;
+            return null;
         }
-        return discPlayTicks.getDouble(variables);
+    }
+
+    private static final class InstabilityState {
+
+        private final Double discPlayTicks;
+        private final Boolean isDiscPlaying;
+
+        private InstabilityState(Double discPlayTicks, Boolean isDiscPlaying) {
+            this.discPlayTicks = discPlayTicks;
+            this.isDiscPlaying = isDiscPlaying;
+        }
     }
 }
