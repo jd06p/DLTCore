@@ -9,7 +9,8 @@
     "TestbedProcedureMixin",
     "KillTriggerNullGuardMixin",
     "KillTriggerDelayedNullGuardMixin",
-    "NothingiswatchingTickNullGuardMixin"
+    "NothingiswatchingTickNullGuardMixin",
+    "FirstJoinProcedureMixin"
   ],
   "injectors": {
     "defaultRequire": 1

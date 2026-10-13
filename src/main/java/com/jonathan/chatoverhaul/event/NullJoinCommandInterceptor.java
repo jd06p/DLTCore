@@ -55,12 +55,11 @@ public final class NullJoinCommandInterceptor {
                 MinecraftServer server = event.getParseResults().getContext().getSource().getServer();
                 if (server != null) {
                     String suffix = lower.contains(" joined the game") ? " has connected to Local Play!" : " has disconnected from Local Play!";
-                    String key = name + "|" + suffix + "|" + (System.nanoTime() / 1000000000L); // session-approx
-                    String key = "nullcmd:" + name + suffix;
-                    if (JoinMessageDedup.shouldSuppress(key)) {
+                    String finalMsg = name + suffix;
+                    if (JoinMessageDedup.isDuplicateThisTick(server, finalMsg)) {
                         return;
                     }
-                    server.getPlayerList().broadcastSystemMessage(Component.literal(name + suffix).withStyle(ChatFormatting.WHITE), false);
+                    server.getPlayerList().broadcastSystemMessage(Component.literal(finalMsg).withStyle(ChatFormatting.WHITE), false);
                 }
             } catch (Exception ignored) {
             }

@@ -1,8 +1,10 @@
 package com.jonathan.chatoverhaul.mixin;
 
+import com.jonathan.chatoverhaul.event.JoinMessageDedup;
 import com.jonathan.chatoverhaul.util.LocalPlayNames;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -108,6 +110,39 @@ public abstract class PlayerDisplayMessageMixin {
         return null;
     }
 
+    private static boolean chatoverhaul$isJoinLeaveLine(String replacement) {
+        return replacement.endsWith(CONNECT) || replacement.endsWith(DISCONNECT);
+    }
+
+    /**
+     * True for every line The ARG Container attributes to its "The_Creator"
+     * identity (join, leave, and the spoken dialogue that follows). Those are
+     * addressed to the single player it captured at login, but are written as
+     * server-wide author messages, so they must reach everyone.
+     */
+    private static boolean chatoverhaul$isAuthorLine(String originalText) {
+        return originalText.toLowerCase(java.util.Locale.ROOT).contains("the_creator");
+    }
+
+    /**
+     * Broadcasts a mod-identity line to every player on the server exactly
+     * once. Mods such as The ARG Container render their "The_Creator joined
+     * the game" / "&lt;The_Creator&gt; ..." text through
+     * ServerPlayer#displayClientMessage, which only reaches the receiving
+     * player; a global broadcast is required so everyone sees it.
+     */
+    private void chatoverhaul$broadcastGlobal(ServerPlayer self, String replacement) {
+        MinecraftServer server = self.getServer();
+        if (server == null) {
+            return;
+        }
+        if (JoinMessageDedup.isDuplicateThisTick(server, replacement)) {
+            return;
+        }
+        server.getPlayerList().broadcastSystemMessage(
+                Component.literal(replacement).withStyle(ChatFormatting.WHITE), false);
+    }
+
     @Inject(method = "displayClientMessage", at = @At("HEAD"), cancellable = true)
     private void chatoverhaul$onDisplayClientMessage(Component message, boolean actionBar, CallbackInfo ci) {
         String text = message.getString();
@@ -117,6 +152,10 @@ public abstract class PlayerDisplayMessageMixin {
         }
         ci.cancel();
         ServerPlayer self = (ServerPlayer) (Object) this;
+        if (chatoverhaul$isJoinLeaveLine(replacement) || chatoverhaul$isAuthorLine(text)) {
+            chatoverhaul$broadcastGlobal(self, replacement);
+            return;
+        }
         self.displayClientMessage(Component.literal(replacement).withStyle(ChatFormatting.WHITE), actionBar);
     }
 
@@ -129,6 +168,10 @@ public abstract class PlayerDisplayMessageMixin {
         }
         ci.cancel();
         ServerPlayer self = (ServerPlayer) (Object) this;
+        if (chatoverhaul$isJoinLeaveLine(replacement) || chatoverhaul$isAuthorLine(text)) {
+            chatoverhaul$broadcastGlobal(self, replacement);
+            return;
+        }
         self.sendSystemMessage(Component.literal(replacement).withStyle(ChatFormatting.WHITE));
     }
 }
