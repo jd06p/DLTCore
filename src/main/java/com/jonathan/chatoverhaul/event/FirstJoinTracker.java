@@ -47,17 +47,34 @@ import java.util.UUID;
 final class FirstJoinTracker {
 
     private static final String FILE_NAME = "chatoverhaul_first_join.txt";
+    private static final String WORLD_DONE_FLAG = "WORLD_DONE";
 
     private FirstJoinTracker() {}
 
     static boolean hasSeenIntro(MinecraftServer server, UUID uuid) {
-        return load(server).contains(uuid.toString());
+        Set<String> seen = load(server);
+        // If world is marked done, treat as seen for everyone
+        if (seen.contains(WORLD_DONE_FLAG)) {
+            return true;
+        }
+        return seen.contains(uuid.toString());
+    }
+
+    static boolean isWorldDone(MinecraftServer server) {
+        return load(server).contains(WORLD_DONE_FLAG);
     }
 
     /** Synchronous - the write is on disk before this returns, not queued for later. */
     static void markSeen(MinecraftServer server, UUID uuid) {
         Set<String> seen = load(server);
         if (seen.add(uuid.toString())) {
+            save(server, seen);
+        }
+    }
+
+    static void markWorldDone(MinecraftServer server) {
+        Set<String> seen = load(server);
+        if (seen.add(WORLD_DONE_FLAG)) {
             save(server, seen);
         }
     }

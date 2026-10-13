@@ -44,6 +44,10 @@ public final class JoinLeaveMessageHandler {
             if (LAST_JOIN.putIfAbsent(uuid, Boolean.TRUE) != null) {
                 return;
             }
+            String key = player.getGameProfile().getName() + "@login:" + uuid.toString();
+            if (JoinMessageDedup.shouldSuppress(key)) {
+                return;
+            }
             broadcast(player, " has connected to Local Play!");
             TickScheduler.scheduleInTicks(40, () -> LAST_JOIN.remove(uuid));
         }

@@ -52,9 +52,9 @@ public final class FirstJoinSequence {
         UUID uuid = player.getUUID();
         synchronized (SEQUENCE_LOCK) {
             if (SEQUENCE_RUNNING) return;
-            if (FirstJoinTracker.hasSeenIntro(server, uuid)) return;
+            if (FirstJoinTracker.isWorldDone(server)) return;
             SEQUENCE_RUNNING = true;
-            FirstJoinTracker.markSeen(server, uuid);
+            FirstJoinTracker.markWorldDone(server);
         }
 
         long t = 0;
