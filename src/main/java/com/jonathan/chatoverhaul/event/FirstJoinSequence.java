@@ -10,6 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Plays a scripted "DeltaQuest" chat sequence the first time a player ever
@@ -36,6 +37,8 @@ import java.util.UUID;
 public final class FirstJoinSequence {
 
     private static final char SYMBOL = '\uA55A';
+    private static final Object SEQUENCE_LOCK = new Object();
+    private static volatile boolean SEQUENCE_RUNNING = false;
 
     private FirstJoinSequence() {}
 
@@ -47,11 +50,12 @@ public final class FirstJoinSequence {
         if (server == null) return;
 
         UUID uuid = player.getUUID();
-        if (FirstJoinTracker.hasSeenIntro(server, uuid)) return;
-
-        // Durable write happens right here, synchronously, before anything
-        // else - see FirstJoinTracker for why.
-        FirstJoinTracker.markSeen(server, uuid);
+        synchronized (SEQUENCE_LOCK) {
+            if (SEQUENCE_RUNNING) return;
+            if (FirstJoinTracker.hasSeenIntro(server, uuid)) return;
+            SEQUENCE_RUNNING = true;
+            FirstJoinTracker.markSeen(server, uuid);
+        }
 
         long t = 0;
 
@@ -84,6 +88,11 @@ public final class FirstJoinSequence {
 
         t += seconds(8);
         broadcastAt(server, t, Component.literal(SYMBOL + " has disconnected from Local Play!").withStyle(ChatFormatting.WHITE));
+        broadcastAt(server, t + 20, () -> {
+            synchronized (SEQUENCE_LOCK) {
+                SEQUENCE_RUNNING = false;
+            }
+        });
     }
 
     private static long seconds(int s) {
@@ -92,5 +101,9 @@ public final class FirstJoinSequence {
 
     private static void broadcastAt(MinecraftServer server, long delayTicks, Component message) {
         TickScheduler.scheduleInTicks(delayTicks, () -> server.getPlayerList().broadcastSystemMessage(message, false));
+    }
+
+    private static void broadcastAt(MinecraftServer server, long delayTicks, Runnable action) {
+        TickScheduler.scheduleInTicks(delayTicks, action);
     }
 }

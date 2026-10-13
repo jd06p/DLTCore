@@ -7,6 +7,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.event.CommandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +17,7 @@ public final class NullJoinCommandInterceptor {
 
     private static final Pattern TEXT_PATTERN = Pattern.compile("\"text\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern TEXT_ESCAPED = Pattern.compile("\\\\\"text\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]+)\\\\");
+    private static final ConcurrentHashMap<String, Long> LAST_SENT = new ConcurrentHashMap<>();
 
     private NullJoinCommandInterceptor() {}
 
@@ -52,6 +55,16 @@ public final class NullJoinCommandInterceptor {
                 MinecraftServer server = event.getParseResults().getContext().getSource().getServer();
                 if (server != null) {
                     String suffix = lower.contains(" joined the game") ? " has connected to Local Play!" : " has disconnected from Local Play!";
+                    String key = name + "|" + suffix + "|" + (System.nanoTime() / 1000000000L); // session-approx
+                    long now = System.currentTimeMillis();
+                    String dedup = name + suffix;
+                    Long last = LAST_SENT.get(dedup);
+                    if (last != null && now - last < 10000) {
+                        return;
+                    }
+                    LAST_SENT.put(dedup, now);
+                    // cleanup old entries
+                    LAST_SENT.entrySet().removeIf(e -> now - e.getValue() > 60000);
                     server.getPlayerList().broadcastSystemMessage(Component.literal(name + suffix).withStyle(ChatFormatting.WHITE), false);
                 }
             } catch (Exception ignored) {

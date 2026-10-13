@@ -8,6 +8,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Emits the DeltaQuest join/leave lines:
@@ -30,12 +33,19 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ChatOverhaul.MODID)
 public final class JoinLeaveMessageHandler {
 
+    private static final ConcurrentHashMap<UUID, Boolean> LAST_JOIN = new ConcurrentHashMap<>();
+
     private JoinLeaveMessageHandler() {}
 
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            UUID uuid = player.getUUID();
+            if (LAST_JOIN.putIfAbsent(uuid, Boolean.TRUE) != null) {
+                return;
+            }
             broadcast(player, " has connected to Local Play!");
+            TickScheduler.scheduleInTicks(40, () -> LAST_JOIN.remove(uuid));
         }
     }
 
