@@ -62,6 +62,192 @@ public abstract class PlayerListBroadcastMixin {
             String replaced = "<BLANK>" + text.substring("<Steven>".length());
             ci.cancel();
             self.broadcastSystemMessage(Component.literal(replaced).withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+
+        // --- The Entity dialogue replacements (Wonderland) ---
+        // Normal dialogue
+        if (text.equals("friends are waiting for us.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("ZnJpZW5kcyBhcmUgd2FpdGluZyBmb3IgdXMu").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("come here.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("Y29tZSBoZXJlLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("look at me.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("bG9vayBhdCBtZS4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("i know who you are.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aSBrbm93IHdobyB5b3UgYXJlLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("hello.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aGVsbG8u").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("don't be afraid")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("ZG9uJ3QgYmUgYWZyYWlk").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("don't run")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("ZG9uJ3QgcnVu").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("there is nothing to be afraid of")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("dGhlcmUgaXMgbm90aGluZyB0byBiZSBhZnJhaWQgb2Y=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("can you see me?")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("Y2FuIHlvdSBzZWUgbWU/").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("coming.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("Y29taW5nLgo=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("i see you")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aSBzZWUgeW91").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("follow me")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("Zm9sbG93IG1l").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("where are you, friend?")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("d2hlcmUgYXJlIHlvdSwgZnJpZW5kPw==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("it is time to go, my friend.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aXQgaXMgdGltZSB0byBnbywgbXkgZnJpZW5kLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("over here, my friend.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("b3ZlciBoZXJlLCBteSBmcmllbmQu").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("you can trust me, do not worry.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("eW91IGNhbiB0cnVzdCBtZSwgZG8gbm90IHdvcnJ5Lg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("keep playing.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("a2VlcCBwbGF5aW5nLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        // Seeking
+        if (text.equals("let's play a game")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("bGV0J3MgcGxheSBhIGdhbWU=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("you have 10 seconds to run away or hide")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("eW91IGhhdmUgMTAgc2Vjb25kcyB0byBydW4gYXdheSBvciBoaWRl").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("10")) { return; }
+        if (text.equals("9")) { return; }
+        if (text.equals("8")) { return; }
+        if (text.equals("7")) { return; }
+        if (text.equals("6")) { return; }
+        if (text.equals("5")) { return; }
+        if (text.equals("4")) { return; }
+        if (text.equals("3")) { return; }
+        if (text.equals("2")) { return; }
+        if (text.equals("1")) { return; }
+        if (text.equals("ready or not, here i come!")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("cmVhZHkgb3Igbm90LCBoZXJlIGkgY29tZSE=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        // Responses
+        if (text.equals("hello")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aGVsbG8=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("i want you to follow me.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aSB3YW50IHlvdSB0byBmb2xsb3cgbWUu").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("look at me.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("bG9vayBhdCBtZS4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("somewhere")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("c29tZXdoZXJl").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("friend")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("ZnJpZW5k").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("yes. of course.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("eWVzLiBvZiBjb3Vyc2Uu").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("i just want to help.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aSBqdXN0IHdhbnQgdG8gaGVscC4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("it is okay, come here.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aXQgaXMgb2theSwgY29tZSBoZXJlLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("do not treat a friend like that.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("ZG8gbm90IHRyZWF0IGEgZnJpZW5kIGxpa2UgdGhhdC4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("our friend. don't listen to him.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("b3VyIGZyaWVuZC4gZG9uJ3QgbGlzdGVuIHRvIGhpbS4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("our good friend.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("b3VyIGdvb2QgZnJpZW5kLg==").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("our friend.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("b3VyIGZyaWVuZC4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("it's me.")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("aXQncyBtZS4=").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
+        }
+        if (text.equals("HOME")) {
+            ci.cancel();
+            self.broadcastSystemMessage(Component.literal("HOME").withStyle(message.getStyle()), bypassHiddenChat);
+            return;
         }
     }
 }
