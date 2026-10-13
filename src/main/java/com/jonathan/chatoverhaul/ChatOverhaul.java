@@ -83,6 +83,15 @@ import net.minecraftforge.fml.config.ModConfig;
  *    killed. The alert itself is strictly client-side (native Windows
  *    MessageBox via JNA, reached through DistExecutor), so a dedicated
  *    server never loads or runs any of it.
+ *  - mixin/instability/InstabilityItemMixin: stops the INSTABILITY music
+ *    disc from firing its whole effect sequence (particles, rain/night,
+ *    isDiscPlaying -> window glitch) from a plain right-click on any block.
+ *    The mod runs its procedure regardless of whether RecordItem actually
+ *    inserted the disc, so it is gated to the exact vanilla insert condition
+ *    (clicked block is an empty jukebox); a non-insert click is cancelled and
+ *    returns InteractionResult.PASS. Common (both sides) because the driving
+ *    map variable is server-owned/synced but the glitch is client-side
+ *    (mixins.chatoverhaul.instability.json, "required": false).
  *  - mixin/instability/GItchtimerupdateProcedureMixin +
  *    client/InstabilityWindowGuard: lets the INSTABILITY music-disc's full
  *    window-glitch sequence play out, then restores the player's real
