@@ -8,7 +8,9 @@
     "CircuitTickDeliveryMixin",
     "CircuitSpawnDeliveryMixin",
     "MoonGlitchJoinMixin",
-    "MoonGlitchEventMixin"
+    "MoonGlitchEventMixin",
+    "FalseCalmCircuitEventMixin",
+    "FalseCalmVoidEventMixin"
   ],
   "client": [
     "CircuitTextOverlayMixin",

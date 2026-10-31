@@ -10,10 +10,13 @@
     "PlayerListCheatsNoticeMixin",
     "BedBlockHubSleepMixin",
     "ServerPlayerHubSleepMixin",
+    "ServerPlayerWonderlandEntryAudioMixin",
     "PlayerListJoinLeaveMixin",
     "ServerGamePacketListenerLeaveMixin"
   ],
-  "client": [],
+  "client": [
+    "MusicManagerWonderlandPolicyMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1
