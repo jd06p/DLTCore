@@ -12,7 +12,9 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * commented, human-editable TOML file" on its own - this class only
  * declares the one value.
  *
- * File lives at config/chatoverhaul-client.toml once generated.
+ * File lives at config/DLTCore-client.toml once generated. The old
+ * config/chatoverhaul-client.toml is copied to that name on first launch
+ * by {@link com.jonathan.chatoverhaul.config.ConfigMigration}.
  */
 public final class ChatOverhaulConfig {
 

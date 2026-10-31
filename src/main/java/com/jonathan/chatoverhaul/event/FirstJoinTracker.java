@@ -1,7 +1,6 @@
 package com.jonathan.chatoverhaul.event;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,8 @@ import java.util.UUID;
  */
 final class FirstJoinTracker {
 
-    private static final String FILE_NAME = "chatoverhaul_first_join.txt";
+    private static final String FILE_NAME = "DLTCore_first_join.txt";
+    private static final String LEGACY_FILE_NAME = "chatoverhaul_first_join.txt";
     private static final String WORLD_DONE_FLAG = "WORLD_DONE";
 
     private FirstJoinTracker() {}
@@ -80,7 +80,7 @@ final class FirstJoinTracker {
     }
 
     private static Path filePathFor(MinecraftServer server) {
-        return server.getWorldPath(LevelResource.ROOT).resolve(FILE_NAME);
+        return WorldDataFiles.resolve(server, FILE_NAME, LEGACY_FILE_NAME);
     }
 
     private static Set<String> load(MinecraftServer server) {

@@ -2,6 +2,7 @@ package com.jonathan.chatoverhaul;
 
 import com.jonathan.chatoverhaul.client.ChatOverhaulConfig;
 import com.jonathan.chatoverhaul.config.ChatOverhaulServerConfig;
+import com.jonathan.chatoverhaul.config.ConfigMigration;
 import com.jonathan.chatoverhaul.network.ChatOverhaulNetwork;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -140,8 +141,13 @@ public class ChatOverhaul {
     public static final String MODID = "chatoverhaul";
 
     public ChatOverhaul() {
+        // Must run before registerConfig: copies legacy chatoverhaul-*.toml
+        // files to their DLTCore-*.toml names so existing values survive.
+        ConfigMigration.run();
         ChatOverhaulNetwork.register();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ChatOverhaulConfig.SPEC);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ChatOverhaulServerConfig.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ChatOverhaulConfig.SPEC,
+                ConfigMigration.CLIENT_FILE);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ChatOverhaulServerConfig.SPEC,
+                ConfigMigration.SERVER_FILE);
     }
 }

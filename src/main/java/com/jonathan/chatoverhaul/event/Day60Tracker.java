@@ -1,7 +1,6 @@
 package com.jonathan.chatoverhaul.event;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +29,8 @@ import java.nio.file.StandardOpenOption;
  */
 final class Day60Tracker {
 
-    private static final String FILE_NAME = "chatoverhaul_day60.txt";
+    private static final String FILE_NAME = "DLTCore_day60.txt";
+    private static final String LEGACY_FILE_NAME = "chatoverhaul_day60.txt";
 
     private Day60Tracker() {}
 
@@ -56,6 +56,6 @@ final class Day60Tracker {
     }
 
     private static Path filePathFor(MinecraftServer server) {
-        return server.getWorldPath(LevelResource.ROOT).resolve(FILE_NAME);
+        return WorldDataFiles.resolve(server, FILE_NAME, LEGACY_FILE_NAME);
     }
 }

@@ -12,7 +12,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * config, not a CLIENT one, or a dedicated server would have no file to
  * read it from at all.
  *
- * File lives at config/chatoverhaul-server.toml once generated (per-world
+ * File lives at config/DLTCore-server.toml once generated (per-world
  * on a dedicated server, same as any other Forge SERVER config).
  */
 public final class ChatOverhaulServerConfig {
