@@ -76,12 +76,17 @@ public final class FakeLwjglAlert {
         }
     }
 
-    private static void showAlert(String message) {
+    private static synchronized void showAlert(String message) {
         try {
             User32.INSTANCE.MessageBoxA(0L, message, "LWJGL Alert", 0);
         } catch (Throwable t) {
             // If the native call fails (e.g. non-Windows platform), stay quiet.
         }
+    }
+
+    /** Shows an additional serialized native alert without changing RUS trigger behavior. */
+    public static synchronized void showMessage(String message) {
+        showAlert(message);
     }
 
     /**

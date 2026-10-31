@@ -15,7 +15,9 @@
     "ServerGamePacketListenerLeaveMixin"
   ],
   "client": [
-    "MusicManagerWonderlandPolicyMixin"
+    "MusicManagerWonderlandPolicyMixin",
+    "WonderlandPauseScreenMixin",
+    "WonderlandWindowCloseMixin"
   ],
   "server": [],
   "injectors": {
