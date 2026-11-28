@@ -4,7 +4,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 
 /**
  * Server config for chatoverhaul (a.k.a. DLTCore) - values read by
- * server-side gameplay logic (currently just the Elytra restriction
+ * server-side gameplay logic (including the Elytra restriction
  * radius). Kept separate from client/ChatOverhaulConfig on purpose: that
  * one is ModConfig.Type.CLIENT (per-player, only exists on a client), this
  * one is ModConfig.Type.SERVER (per-world, exists on a dedicated server
@@ -20,6 +20,8 @@ public final class ChatOverhaulServerConfig {
     public static final ForgeConfigSpec SPEC;
     public static final ForgeConfigSpec.DoubleValue ELYTRA_RESTRICTION_RADIUS;
 
+    public static final ForgeConfigSpec.BooleanValue CRITICAL_BAR_ENABLED;
+
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
@@ -32,6 +34,12 @@ public final class ChatOverhaulServerConfig {
                         "that flying away from these shouldn't be a viable escape."
                 )
                 .defineInRange("elytra_restriction_radius", 32.0, 0.0, 256.0);
+        builder.pop();
+
+        builder.push("critical_bar");
+        CRITICAL_BAR_ENABLED = builder
+                .comment("Enable the mob-kill Critical Bar and its temporary combat effects.")
+                .define("critical_bar_enabled", true);
         builder.pop();
 
         SPEC = builder.build();

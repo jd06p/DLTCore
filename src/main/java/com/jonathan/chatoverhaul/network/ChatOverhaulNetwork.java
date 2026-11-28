@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * chatoverhaul's Forge network channel - the same SimpleChannel pattern the
  * Integrity bossfight mod uses to deliver its client-only fake-LWJGL-alert
- * triggers. Carries three client-bound message types: {@link ClientAlertPacket}
+ * triggers. Carries client-bound message types including: {@link ClientAlertPacket}
  * (the cosmetic fake-alert trigger, id 0) and {@link QuestSyncPacket} (the
  * per-player quest-state snapshot the quest HUD renders from, id 1), and
  * {@link CircuitChasePacket} (the private Circuit screen state, id 2).
@@ -25,7 +25,7 @@ import java.util.Optional;
 public final class ChatOverhaulNetwork {
 
     /** Bumped when the wire layout or required packet set changes. */
-    public static final String PROTOCOL_VERSION = "2";
+    public static final String PROTOCOL_VERSION = "3";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(ChatOverhaul.MODID, "main"),
@@ -37,6 +37,8 @@ public final class ChatOverhaulNetwork {
     private ChatOverhaulNetwork() {}
 
     public static void register() {
+        CHANNEL.registerMessage(3, CriticalBarSyncPacket.class, CriticalBarSyncPacket::encode,
+                CriticalBarSyncPacket::new, CriticalBarSyncPacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(2, CircuitChasePacket.class, CircuitChasePacket::encode,
                 CircuitChasePacket::new, CircuitChasePacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(

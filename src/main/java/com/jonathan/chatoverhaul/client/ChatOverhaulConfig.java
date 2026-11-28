@@ -19,6 +19,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 public final class ChatOverhaulConfig {
 
     public static final ForgeConfigSpec SPEC;
+    static final CriticalBarHudConfig CRITICAL_BAR;
     public static final ForgeConfigSpec.ConfigValue<String> OVERWORLD_OVERLAY_TEXT;
     public static final ForgeConfigSpec.BooleanValue CUSTOM_SKYBOXES_OVERWORLD_ONLY;
     public static final ForgeConfigSpec.BooleanValue CUSTOM_SKYBOXES_AUTO_ROTATION;
@@ -56,6 +57,7 @@ public final class ChatOverhaulConfig {
                 .defineInRange("nightRotationTicks", 24000, 1, 72000);
         builder.pop(2);
 
+        CRITICAL_BAR = new CriticalBarHudConfig(builder);
         SPEC = builder.build();
     }
 

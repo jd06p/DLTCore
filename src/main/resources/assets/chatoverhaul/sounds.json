@@ -6,5 +6,11 @@
         "stream": true
       }
     ]
+  },
+  "critical.activate": {
+    "sounds": ["chatoverhaul:gameplay/activation"]
+  },
+  "critical.deactivate": {
+    "sounds": ["chatoverhaul:gameplay/deactivate"]
   }
 }

@@ -17,6 +17,14 @@ public final class DLTCoreSounds {
             "music.thevoid",
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(ChatOverhaul.MODID, "music.thevoid")));
 
+    public static final RegistryObject<SoundEvent> CRITICAL_ACTIVATE = SOUND_EVENTS.register(
+            "critical.activate",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(ChatOverhaul.MODID, "critical.activate")));
+
+    public static final RegistryObject<SoundEvent> CRITICAL_DEACTIVATE = SOUND_EVENTS.register(
+            "critical.deactivate",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(ChatOverhaul.MODID, "critical.deactivate")));
+
     private DLTCoreSounds() {}
 
     public static void register(IEventBus modEventBus) {
