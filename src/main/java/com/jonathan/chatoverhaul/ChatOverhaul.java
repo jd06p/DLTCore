@@ -4,7 +4,9 @@ import com.jonathan.chatoverhaul.client.ChatOverhaulConfig;
 import com.jonathan.chatoverhaul.config.ChatOverhaulServerConfig;
 import com.jonathan.chatoverhaul.config.ConfigMigration;
 import com.jonathan.chatoverhaul.network.ChatOverhaulNetwork;
+import com.jonathan.chatoverhaul.registry.DLTCoreSounds;
 import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 
@@ -145,6 +147,7 @@ public class ChatOverhaul {
         // files to their DLTCore-*.toml names so existing values survive.
         ConfigMigration.run();
         ChatOverhaulNetwork.register();
+        DLTCoreSounds.register(FMLJavaModLoadingContext.get().getModEventBus());
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ChatOverhaulConfig.SPEC,
                 ConfigMigration.CLIENT_FILE);
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ChatOverhaulServerConfig.SPEC,

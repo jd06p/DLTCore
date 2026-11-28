@@ -63,6 +63,8 @@ mixin {
     config 'mixins.chatoverhaul.arg.server.json'
     config 'mixins.chatoverhaul.rus.server.json'
     config 'mixins.chatoverhaul.customskyboxes.json'
+    config 'mixins.chatoverhaul.battlemusic.json'
+    config 'mixins.chatoverhaul.infernalmobs.json'
 }
 
 repositories {
@@ -108,6 +110,15 @@ dependencies {
     // chatoverhaul still loads fine without the INSTABILITY mod installed.
     compileOnly files('libs/INSTABILITY.jar')
 
+    // Compile-time API for the optional Battle Music client compatibility.
+    // Not bundled or required at runtime; all target mixins are optional and
+    // client-only so DLTCore also runs when Battle Music is absent.
+    compileOnly files('libs/battlemusic-1.20.1-1.1.1.jar')
+
+    // Compile-time target for the optional, client-only Infernal Mobs particle
+    // mixin. Not included in DLTCore's runtime jar.
+    compileOnly files('libs/infernalmobs-1.20.1.11.jar')
+
     // JNA (Java Native Access) provides the native Windows MessageBox used for
     // the fake "LWJGL Alert" on Entity303 death (client/FakeLwjglAlert).
     // Deliberately NOT bundled into the mod jar: the launcher already ships a
@@ -130,7 +141,7 @@ jar {
             'Implementation-Title'    : project.name,
             'Implementation-Version'  : project.jar.archiveVersion,
             'Implementation-Vendor'   : 'jonathan',
-            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json,mixins.chatoverhaul.arg.server.json,mixins.chatoverhaul.rus.server.json,mixins.chatoverhaul.instability.json,mixins.chatoverhaul.wonderland.json,mixins.chatoverhaul.customskyboxes.json'
+            'MixinConfigs'            : 'mixins.chatoverhaul.json,mixins.chatoverhaul.cpapi.json,mixins.chatoverhaul.rus.json,mixins.chatoverhaul.arg.json,mixins.chatoverhaul.arg.server.json,mixins.chatoverhaul.rus.server.json,mixins.chatoverhaul.instability.json,mixins.chatoverhaul.wonderland.json,mixins.chatoverhaul.customskyboxes.json,mixins.chatoverhaul.battlemusic.json,mixins.chatoverhaul.infernalmobs.json'
         ])
     }
 }

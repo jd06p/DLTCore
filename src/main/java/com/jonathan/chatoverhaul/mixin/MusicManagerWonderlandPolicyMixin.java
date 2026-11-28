@@ -1,6 +1,7 @@
 package com.jonathan.chatoverhaul.mixin;
 
 import com.jonathan.chatoverhaul.client.WonderlandVanillaMusicPolicy;
+import com.jonathan.chatoverhaul.client.DimensionBackgroundMusic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.MusicManager;
@@ -27,6 +28,11 @@ public abstract class MusicManagerWonderlandPolicyMixin {
         return minecraft.level != null && selected != null
                 && WonderlandVanillaMusicPolicy.shouldBlock(minecraft.level.dimension().location(),
                         selected.getEvent().value().getLocation());
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"), require = 1)
+    private void chatoverhaul$updateDimensionMusic(CallbackInfo ci) {
+        DimensionBackgroundMusic.update(minecraft.level, currentMusic, minecraft.getSoundManager());
     }
 
     // The selected Music has just been stored in local 1. Intercept BEFORE currentMusic comparison:

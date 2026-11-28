@@ -19,12 +19,34 @@ public final class WonderlandVanillaMusicPolicy {
             new ResourceLocation("the_wonderland", "corners"),
             new ResourceLocation("the_wonderland", "maze"));
 
+    /** Dimensions where DLTCore supplies one dedicated looping background track. */
+    public static final Set<ResourceLocation> CUSTOM_MUSIC_DIMENSIONS = Set.of(
+            new ResourceLocation("the_arg_container", "soul_d"),
+            new ResourceLocation("the_wonderland", "dlrowmaerd"),
+            new ResourceLocation("the_wonderland", "maze"),
+            new ResourceLocation("the_wonderland", "no_mans_land"),
+            new ResourceLocation("the_wonderland", "endless_forest"));
+
+    /** Dimensions where vanilla background music is silent, with no replacement track. */
+    public static final Set<ResourceLocation> SILENT_MUSIC_DIMENSIONS = Set.of(
+            new ResourceLocation("thebrokenscript", "clan_void"),
+            new ResourceLocation("thebrokenscript", "day_a"),
+            new ResourceLocation("thebrokenscript", "day_b"),
+            new ResourceLocation("thebrokenscript", "null_torture"));
+
     private WonderlandVanillaMusicPolicy() {}
 
+    public static boolean shouldBlockVanillaBackgroundMusic(ResourceLocation dimension) {
+        if (dimension == null) return false;
+        if (CUSTOM_MUSIC_DIMENSIONS.contains(dimension) || SILENT_MUSIC_DIMENSIONS.contains(dimension)) return true;
+
+        // Preserve DLTCore's existing Wonderland music policy for all other dimensions.
+        return "the_wonderland".equals(dimension.getNamespace())
+                && !VANILLA_MUSIC_ALLOWED_DIMENSIONS.contains(dimension);
+    }
+
     public static boolean shouldBlock(ResourceLocation dimension, ResourceLocation sound) {
-        return dimension != null && sound != null
-                && "the_wonderland".equals(dimension.getNamespace())
-                && !VANILLA_MUSIC_ALLOWED_DIMENSIONS.contains(dimension)
+        return shouldBlockVanillaBackgroundMusic(dimension) && sound != null
                 && "minecraft".equals(sound.getNamespace())
                 && sound.getPath().startsWith("music.");
     }

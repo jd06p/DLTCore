@@ -1,0 +1,10 @@
+{
+  "music.thevoid": {
+    "sounds": [
+      {
+        "name": "chatoverhaul:music/thevoid",
+        "stream": true
+      }
+    ]
+  }
+}

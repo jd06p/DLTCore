@@ -24,3 +24,24 @@ authors = "Karma_Mortadela"
     versionRange = "[1.20.1,1.21)"
     ordering = "NONE"
     side = "BOTH"
+
+[[dependencies.chatoverhaul]]
+    modId = "battlemusic"
+    mandatory = false
+    versionRange = "[1.20.1-1.1.1,)"
+    ordering = "AFTER"
+    side = "CLIENT"
+
+[[dependencies.chatoverhaul]]
+    modId = "watching"
+    mandatory = false
+    versionRange = "[1.9.2,)"
+    ordering = "AFTER"
+    side = "BOTH"
+
+[[dependencies.chatoverhaul]]
+    modId = "infernalmobs"
+    mandatory = false
+    versionRange = "[1.20.1.11,)"
+    ordering = "AFTER"
+    side = "CLIENT"

@@ -1,0 +1,15 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.jonathan.chatoverhaul.mixin.battlemusic",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "chatoverhaul.refmap.json",
+  "client": [
+    "BattleMusicValidityMixin",
+    "BattleMusicSelectionMixin",
+    "BattleMusicInstanceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
